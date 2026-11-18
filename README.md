@@ -22,7 +22,7 @@ Differences from upstream:
 - Updated to current dependencies (hyper 1.x via hyper-util, tokio 1.5x, env_logger 0.11); unused `chrono`/`url` dependencies removed.
 - HTTP server serves both HTTP/1.1 and HTTP/2.
 - Fully static musl binary in a `FROM scratch` image (no OS layer), running as UID/GID 5000.
-- Image tags: `latest` and a build date tag (`YYYY-MM-DD`), built for `linux/arm64`.
+- Image tags: `latest` and a build date tag (`YYYY-MM-DD`), built for `linux/arm64`. A new image is published only when the code, Cargo files or Dockerfile change (or on a manual CI run); README-only changes just update the Docker Hub description.
 - CI runs clippy, an integration test against a mock NUT server, and `cargo audit` (RustSec advisories) on every push and weekly.
 - Dependabot opens weekly dependency PRs; they are merged automatically once CI passes, which also publishes a new image.
 

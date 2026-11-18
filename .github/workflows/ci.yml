@@ -69,27 +69,55 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
 
       - name: Download lockfile
         uses: actions/download-artifact@v8
         with:
           name: cargo-lock
 
-      - name: Decide whether to publish
+      - name: Decide whether to build and publish
         id: meta
         env:
           HAS_TOKEN: ${{ secrets.DOCKERHUB_TOKEN != '' }}
+          EVENT: ${{ github.event_name }}
+          BEFORE: ${{ github.event.before }}
+          IS_DEFAULT_BRANCH: ${{ github.ref == format('refs/heads/{0}', github.event.repository.default_branch) }}
         run: |
           DATE="$(date -u +%Y-%m-%d)"
           echo "date=$DATE" >> "$GITHUB_OUTPUT"
+
+          # Only files that end up in the image trigger a new image.
+          # Manual runs (workflow_dispatch) always rebuild; PRs always test the build.
+          IMAGE_CHANGED=true
+          if [[ "$EVENT" == "push" && -n "$BEFORE" && ! "$BEFORE" =~ ^0+$ ]] && git cat-file -e "$BEFORE^{commit}" 2>/dev/null; then
+            if git diff --name-only "$BEFORE" HEAD | grep -qE '^(src/|Cargo\.(toml|lock)$|Dockerfile$)'; then
+              IMAGE_CHANGED=true
+            else
+              IMAGE_CHANGED=false
+            fi
+          fi
+
+          ON_MAIN=false
+          if [[ "$HAS_TOKEN" == "true" && "$IS_DEFAULT_BRANCH" == "true" && "$EVENT" != "pull_request" ]]; then
+            ON_MAIN=true
+          fi
           PUBLISH=false
-          if [[ "$HAS_TOKEN" == "true" && "${{ github.ref }}" == "refs/heads/${{ github.event.repository.default_branch }}" && "${{ github.event_name }}" != "pull_request" ]]; then
+          if [[ "$ON_MAIN" == "true" && "$IMAGE_CHANGED" == "true" ]]; then
             PUBLISH=true
           fi
+
+          echo "build=$IMAGE_CHANGED" >> "$GITHUB_OUTPUT"
+          echo "on_main=$ON_MAIN" >> "$GITHUB_OUTPUT"
           echo "publish=$PUBLISH" >> "$GITHUB_OUTPUT"
-          echo "Publish to Docker Hub: $PUBLISH (tags: latest, $DATE)" >> "$GITHUB_STEP_SUMMARY"
+          {
+            echo "Image inputs changed: $IMAGE_CHANGED"
+            echo "Publish to Docker Hub: $PUBLISH (tags: latest, $DATE)"
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Set up Docker Buildx
+        if: steps.meta.outputs.build == 'true'
         uses: docker/setup-buildx-action@v4
 
       - name: Login to Docker Hub
@@ -100,6 +128,7 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Build (and push on default branch)
+        if: steps.meta.outputs.build == 'true'
         uses: docker/build-push-action@v7
         with:
           context: .
@@ -112,7 +141,7 @@ jobs:
           push: ${{ steps.meta.outputs.publish == 'true' }}
 
       - name: Sync README to Docker Hub description
-        if: steps.meta.outputs.publish == 'true'
+        if: steps.meta.outputs.on_main == 'true'
         # Requires a Docker Hub token with Read, Write, Delete scope; don't fail the release over it.
         continue-on-error: true
         uses: peter-evans/dockerhub-description@v5
