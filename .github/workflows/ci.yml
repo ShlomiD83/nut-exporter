@@ -110,3 +110,15 @@ jobs:
             ${{ env.DOCKER_REPO }}:latest
             ${{ env.DOCKER_REPO }}:${{ steps.meta.outputs.date }}
           push: ${{ steps.meta.outputs.publish == 'true' }}
+
+      - name: Sync README to Docker Hub description
+        if: steps.meta.outputs.publish == 'true'
+        # Requires a Docker Hub token with Read, Write, Delete scope; don't fail the release over it.
+        continue-on-error: true
+        uses: peter-evans/dockerhub-description@v5
+        with:
+          username: ${{ env.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          repository: ${{ env.DOCKER_REPO }}
+          readme-filepath: ./README.md
+          enable-url-completion: true

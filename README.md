@@ -3,6 +3,16 @@
 [![CI](https://github.com/ShlomiD83/nut-exporter/actions/workflows/ci.yml/badge.svg)](https://github.com/ShlomiD83/nut-exporter/actions/workflows/ci.yml)
 [![Docker pulls](https://img.shields.io/docker/pulls/romekd/prometheus-nut-exporter?label=Docker%20Hub)](https://hub.docker.com/r/romekd/prometheus-nut-exporter)
 
+> **⚠️ IMPORTANT – Grafana plugin required**
+>
+> The dashboard shows UPS runtime as `mm:ss` using the **Dynamic Text** panel plugin. Grafana must have it installed, or the runtime panel will not render. Set this environment variable on the **Grafana** container:
+>
+> ```
+> GF_PLUGINS_PREINSTALL=marcusolsson-dynamictext-panel
+> ```
+>
+> See [Grafana](#grafana) below for a full example.
+
 Fork of [HON95/prometheus-nut-exporter](https://github.com/HON95/prometheus-nut-exporter), published as [`romekd/prometheus-nut-exporter`](https://hub.docker.com/r/romekd/prometheus-nut-exporter).
 
 Differences from upstream:
@@ -103,11 +113,37 @@ resources:
 
 [Example dashboard](https://grafana.com/grafana/dashboards/14371)
 
+**Required plugin:** the UPS runtime is displayed as `mm:ss` with the [Dynamic Text](https://grafana.com/grafana/plugins/marcusolsson-dynamictext-panel/) panel plugin. Grafana installs it on startup when this environment variable is set on the Grafana container:
+
+```
+GF_PLUGINS_PREINSTALL=marcusolsson-dynamictext-panel
+```
+
+Docker CLI:
+
+```sh
+docker run -d -p 3000:3000 -e GF_PLUGINS_PREINSTALL=marcusolsson-dynamictext-panel grafana/grafana
+```
+
+Docker Compose:
+
+```yaml
+services:
+  grafana:
+    image: grafana/grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_PLUGINS_PREINSTALL=marcusolsson-dynamictext-panel
+```
+
+If you add the variable to an existing Grafana container, recreate the container (e.g. `docker compose up -d grafana`) so it picks up the change.
+
 ## Configuration
 
 ### Docker Image Versions
 
-Use e.g. `1` for stable v1.y.z releases and `latest` for bleeding/dev/unstable releases.
+Use `latest` for the newest build, or a date tag (e.g. `2026-11-18`) to pin a specific build. Images are built for `linux/arm64`.
 
 ### Environment Variables
 
