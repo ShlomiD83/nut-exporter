@@ -50,24 +50,36 @@ If you want to test that it's working, run `telnet <nut-server> 3493` and then `
 Example `docker-compose.yml`:
 
 ```yaml
-version: "3.7"
-
 services:
   nut-exporter:
-    # Stable v1
-    image: hon95/prometheus-nut-exporter:1
+    image: romekd/prometheus-nut-exporter:latest
+    container_name: nut-exporter
+    restart: unless-stopped
     environment:
-      - TZ=Europe/Oslo
-      - HTTP_PATH=/metrics
-      # Defaults
-      #- RUST_LOG=info
-      #- HTTP_PORT=9995
-      #- HTTP_PATH=/nut
-      #- LOG_REQUESTS_CONSOLE=false
-      #- PRINT_METRICS_AND_EXIT=false
+      # /metrics is Prometheus' default metrics_path, so no extra scrape config is needed
+      HTTP_PATH: /metrics
+      RUST_LOG: info
+    # HTTP_PORT defaults to 9995
     ports:
       - "9995:9995/tcp"
+    # Security hardening
+    user: "5000:5000"
+    read_only: true
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    mem_limit: 64m
+    cpus: 0.5
+    pids_limit: 64
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
 ```
+
+The image is a single static binary on `scratch` (no shell, no OS), so it runs fine as a non-root user with a read-only filesystem and no Linux capabilities. It needs only a few MB of memory; the limits above leave plenty of headroom.
 
 ### Prometheus
 
