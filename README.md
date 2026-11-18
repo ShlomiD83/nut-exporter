@@ -28,11 +28,6 @@ Differences from upstream:
 
 Configuration, metrics and Prometheus setup are unchanged from upstream and documented below.
 
-```sh
-docker run -d -p 9995:9995 romekd/prometheus-nut-exporter:latest
-# then scrape http://<host>:9995/nut?target=<nut-server>:3493
-```
-
 ![Charging Status dashboard](https://raw.githubusercontent.com/ShlomiD83/nut-exporter/main/docs/dashboard.png)
 
 A Prometheus/OpenMetrics exporter for uninterruptable power supplies (UPSes) using Network UPS Tools (NUT).
