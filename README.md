@@ -1,9 +1,24 @@
-# Prometheus NUT Exporter
+# Prometheus NUT Exporter (modernized ARM64 build)
 
-[![GitHub release](https://img.shields.io/github/v/release/HON95/prometheus-nut-exporter?label=Version)](https://github.com/HON95/prometheus-nut-exporter/releases)
-[![CI](https://github.com/HON95/prometheus-nut-exporter/workflows/CI/badge.svg?branch=master)](https://github.com/HON95/prometheus-nut-exporter/actions?query=workflow%3ACI)
-[![FOSSA status](https://app.fossa.com/api/projects/git%2Bgithub.com%2FHON95%2Fprometheus-nut-exporter.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2FHON95%2Fprometheus-nut-exporter?ref=badge_shield)
-[![Docker pulls](https://img.shields.io/docker/pulls/hon95/prometheus-nut-exporter?label=Docker%20Hub)](https://hub.docker.com/r/hon95/prometheus-nut-exporter)
+[![CI](https://github.com/ShlomiD83/nut-exporter/actions/workflows/ci.yml/badge.svg)](https://github.com/ShlomiD83/nut-exporter/actions/workflows/ci.yml)
+[![Docker pulls](https://img.shields.io/docker/pulls/romekd/prometheus-nut-exporter?label=Docker%20Hub)](https://hub.docker.com/r/romekd/prometheus-nut-exporter)
+
+Fork of [HON95/prometheus-nut-exporter](https://github.com/HON95/prometheus-nut-exporter), published as [`romekd/prometheus-nut-exporter`](https://hub.docker.com/r/romekd/prometheus-nut-exporter).
+
+Differences from upstream:
+
+- Updated to current dependencies (hyper 1.x via hyper-util, tokio 1.5x, env_logger 0.11); unused `chrono`/`url` dependencies removed.
+- HTTP server serves both HTTP/1.1 and HTTP/2.
+- Fully static musl binary in a `FROM scratch` image (no OS layer), running as UID/GID 5000.
+- Image tags: `latest` and a build date tag (`YYYY-MM-DD`), built for `linux/arm64`.
+- CI runs clippy, an integration test against a mock NUT server, and `cargo audit` (RustSec advisories) on every push and weekly.
+
+Configuration, metrics and Prometheus setup are unchanged from upstream and documented below.
+
+```sh
+docker run -d -p 9995:9995 romekd/prometheus-nut-exporter:latest
+# then scrape http://<host>:9995/nut?target=<nut-server>:3493
+```
 
 ![Dashboard](https://grafana.com/api/dashboards/14371/images/10335/image)
 

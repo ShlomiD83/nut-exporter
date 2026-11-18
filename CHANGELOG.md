@@ -8,11 +8,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- HTTP/2 support (hyper-util auto connection builder).
+- `cargo audit` security check and Dependabot in CI.
+
 ### Changed
+
+- Migrated to hyper 1.x / hyper-util / http-body-util and updated all dependencies.
+- Docker image is now `FROM scratch` with a static musl binary, published as `romekd/prometheus-nut-exporter` (`latest` + date tag, arm64).
 
 ### Deprecated
 
 ### Removed
+
+- Unused `chrono` dependency; `url` replaced by `form_urlencoded`.
 
 ### Fixed
 

@@ -2,108 +2,111 @@ name: CI
 
 on:
   push:
-    branches: ["*"]
+    branches: ["**"]
   pull_request:
-    branches: ["*"]
-  release:
-    types: [published]
   workflow_dispatch: {}
+  schedule:
+    # Weekly security audit of dependencies (does not publish an image)
+    - cron: "17 4 * * 1"
 
 env:
   CARGO_TERM_COLOR: always
-  DOCKER_BUILD_PLATFORMS: >-
-    linux/386,
-    linux/amd64,
-    linux/arm/v6,
-    linux/arm/v7,
-    linux/arm64/v8,
-  DOCKER_REPO: hon95/prometheus-nut-exporter
+  DOCKER_REPO: romekd/prometheus-nut-exporter
+  DOCKER_USERNAME: romekd
+  DOCKER_PLATFORMS: linux/arm64
 
 jobs:
   check:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
-      - name: Add dependencies
-        run: rustup component add clippy
+        uses: actions/checkout@v4
+
+      - name: Set up Rust
+        run: |
+          rustup update stable --no-self-update
+          rustup default stable
+          rustup component add clippy
+
+      - name: Generate lockfile if missing
+        run: test -f Cargo.lock || cargo generate-lockfile
+
       - name: Build
-        run: cargo build --verbose
-      - name: Check code
+        run: cargo build --locked
+
+      - name: Check code (clippy + style)
         run: manage/check.sh
+
       - name: Run integration test
         run: manage/integration_test.sh
 
-  publish-bleeding:
-    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
-    needs: check
-    runs-on: ubuntu-22.04
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-      - name: Update version
-        run: echo "version=$(echo 0.0.0-SNAPSHOT+$(TZ=Etc/GMT date "+%Y-%m-%dT%H:%M:%SZ"))" | tee -a $GITHUB_ENV
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v2
+      - name: Install cargo-audit
+        uses: taiki-e/install-action@v2
         with:
-          platforms: ${{ env.DOCKER_BUILD_PLATFORMS }}
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-      - name: Login to Docker Hub
-        uses: docker/login-action@v2
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-      - name: Build and push to Docker Hub
-        uses: docker/build-push-action@v3
-        with:
-          build-args: |
-            APP_VERSION=${{ env.version }}
-          platforms: ${{ env.DOCKER_BUILD_PLATFORMS }}
-          tags: |
-            ${{ env.DOCKER_REPO }}:latest
-            ${{ env.DOCKER_REPO }}:bleeding
-          push: true
+          tool: cargo-audit
 
-  publish-stable:
-    if: github.event_name == 'release' && github.event.action == 'published' && startsWith(github.ref, 'refs/tags/v')
-    needs: check
-    runs-on: ubuntu-22.04
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-      - name: Extract version
+      - name: Security audit (RustSec / CVE database)
+        run: cargo audit --deny warnings
+
+      - name: Dependency report
+        if: always()
         run: |
-          # Get version from git tag
-          VERSION="$(echo ${GITHUB_REF#refs/tags/v})"
-          echo "version=$VERSION" | tee -a $GITHUB_ENV
-          # Check if semantic version (3 numbers, ignore pre-release and metadata)
-          echo $VERSION | grep -Po '^\d+\.\d+\.\d+'
-          # Extract other version representations
-          echo "version_major=$(echo $VERSION | grep -Po '^\d+')" | tee -a $GITHUB_ENV
-          echo "version_minor=$(echo $VERSION | grep -Po '^\d+\.\d+')" | tee -a $GITHUB_ENV
-          echo "version_patch=$(echo $VERSION | grep -Po '^\d+\.\d+\.\d+')" | tee -a $GITHUB_ENV
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v2
+          echo "## Direct dependencies" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          cargo tree --depth 1 >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload lockfile
+        uses: actions/upload-artifact@v4
         with:
-          platforms: ${{ env.DOCKER_BUILD_PLATFORMS }}
+          name: cargo-lock
+          path: Cargo.lock
+
+  docker:
+    needs: check
+    if: github.event_name != 'schedule'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download lockfile
+        uses: actions/download-artifact@v4
+        with:
+          name: cargo-lock
+
+      - name: Decide whether to publish
+        id: meta
+        env:
+          HAS_TOKEN: ${{ secrets.DOCKERHUB_TOKEN != '' }}
+        run: |
+          DATE="$(date -u +%Y-%m-%d)"
+          echo "date=$DATE" >> "$GITHUB_OUTPUT"
+          PUBLISH=false
+          if [[ "$HAS_TOKEN" == "true" && "${{ github.ref }}" == "refs/heads/${{ github.event.repository.default_branch }}" && "${{ github.event_name }}" != "pull_request" ]]; then
+            PUBLISH=true
+          fi
+          echo "publish=$PUBLISH" >> "$GITHUB_OUTPUT"
+          echo "Publish to Docker Hub: $PUBLISH (tags: latest, $DATE)" >> "$GITHUB_STEP_SUMMARY"
+
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
+        uses: docker/setup-buildx-action@v3
+
       - name: Login to Docker Hub
-        uses: docker/login-action@v2
+        if: steps.meta.outputs.publish == 'true'
+        uses: docker/login-action@v3
         with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-      - name: Build and push to Docker Hub
-        uses: docker/build-push-action@v3
+          username: ${{ env.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build (and push on default branch)
+        uses: docker/build-push-action@v6
         with:
+          context: .
+          platforms: ${{ env.DOCKER_PLATFORMS }}
           build-args: |
-            APP_VERSION=${{ env.version }}
-          platforms: ${{ env.DOCKER_BUILD_PLATFORMS }}
+            APP_VERSION=${{ steps.meta.outputs.date }}
           tags: |
             ${{ env.DOCKER_REPO }}:latest
-            ${{ env.DOCKER_REPO }}:${{ env.version_major }}
-            ${{ env.DOCKER_REPO }}:${{ env.version_minor }}
-            ${{ env.DOCKER_REPO }}:${{ env.version_patch }}
-            ${{ env.DOCKER_REPO }}:stable
-          push: true
+            ${{ env.DOCKER_REPO }}:${{ steps.meta.outputs.date }}
+          push: ${{ steps.meta.outputs.publish == 'true' }}
