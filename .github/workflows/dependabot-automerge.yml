@@ -1,0 +1,58 @@
+name: Dependabot auto-merge
+
+# Merges a Dependabot PR once CI has passed on it, then re-runs CI on main so the
+# new image is built and pushed to Docker Hub. (A merge made with GITHUB_TOKEN does
+# not trigger push workflows, but workflow_dispatch is allowed.)
+# Runs from the default branch with a write token; it never checks out PR code.
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+
+permissions:
+  contents: write
+  pull-requests: write
+  actions: write
+
+concurrency:
+  group: dependabot-automerge
+  cancel-in-progress: false
+
+jobs:
+  merge:
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'pull_request' &&
+      github.event.workflow_run.head_repository.full_name == github.repository &&
+      startsWith(github.event.workflow_run.head_branch, 'dependabot/')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Merge PR and publish
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          HEAD_BRANCH: ${{ github.event.workflow_run.head_branch }}
+          HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          set -euo pipefail
+          PR="$(gh api "repos/$REPO/pulls?state=open&head=${REPO%%/*}:$HEAD_BRANCH" --jq '.[0]')"
+          if [[ -z "$PR" ]]; then
+            echo "No open PR for $HEAD_BRANCH (already merged or closed)."
+            exit 0
+          fi
+          NUMBER="$(jq -r .number <<<"$PR")"
+          AUTHOR="$(jq -r .user.login <<<"$PR")"
+          PR_SHA="$(jq -r .head.sha <<<"$PR")"
+          if [[ "$AUTHOR" != "dependabot[bot]" ]]; then
+            echo "PR #$NUMBER is by $AUTHOR, not Dependabot; skipping."
+            exit 0
+          fi
+          if [[ "$PR_SHA" != "$HEAD_SHA" ]]; then
+            echo "PR #$NUMBER has new commits since this CI run; waiting for the next run."
+            exit 0
+          fi
+          gh pr merge "$NUMBER" -R "$REPO" --squash --delete-branch --match-head-commit "$HEAD_SHA"
+          echo "Merged PR #$NUMBER: $(jq -r .title <<<"$PR")" >> "$GITHUB_STEP_SUMMARY"
+          gh workflow run ci.yml -R "$REPO" --ref main
+          echo "Triggered CI on main to build and publish the image." >> "$GITHUB_STEP_SUMMARY"

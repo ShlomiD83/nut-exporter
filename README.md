@@ -24,6 +24,7 @@ Differences from upstream:
 - Fully static musl binary in a `FROM scratch` image (no OS layer), running as UID/GID 5000.
 - Image tags: `latest` and a build date tag (`YYYY-MM-DD`), built for `linux/arm64`.
 - CI runs clippy, an integration test against a mock NUT server, and `cargo audit` (RustSec advisories) on every push and weekly.
+- Dependabot opens weekly dependency PRs; they are merged automatically once CI passes, which also publishes a new image.
 
 Configuration, metrics and Prometheus setup are unchanged from upstream and documented below.
 
