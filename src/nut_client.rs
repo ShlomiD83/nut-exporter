@@ -1,6 +1,6 @@
 use std::collections::HashMap;
+use std::sync::LazyLock;
 
-use lazy_static::lazy_static;
 use regex::Regex;
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 use tokio::net::TcpStream;
@@ -43,9 +43,7 @@ async fn scrape_nut_upses(stream: &mut BufReader<TcpStream>) -> ErrorResult<(Ups
 }
 
 async fn query_nut_version(stream: &mut BufReader<TcpStream>, nut_version: &mut NutVersion) -> ErrorResult<()> {
-    lazy_static! {
-        static ref VERSION_PATTERN: Regex = Regex::new(r#"upsd (?P<version>.+) -"#).unwrap();
-    }
+    static VERSION_PATTERN: LazyLock<Regex> = LazyLock::new(|| Regex::new(r#"upsd (?P<version>.+) -"#).unwrap());
 
     stream.write_all(b"VER\n").await?;
     log::trace!("NUT query sent: {}", "VER");
@@ -66,9 +64,7 @@ async fn query_nut_version(stream: &mut BufReader<TcpStream>, nut_version: &mut 
 }
 
 async fn query_nut_upses(stream: &mut BufReader<TcpStream>, upses: &mut UpsVarMap) -> ErrorResult<()> {
-    lazy_static! {
-        static ref UPS_PATTERN: Regex = Regex::new(r#"^UPS\s+(?P<ups>[\S]+)\s+"(?P<desc>[^"]*)"$"#).unwrap();
-    }
+    static UPS_PATTERN: LazyLock<Regex> = LazyLock::new(|| Regex::new(r#"^UPS\s+(?P<ups>[\S]+)\s+"(?P<desc>[^"]*)"$"#).unwrap());
 
     let line_consumer = |line: &str| {
         let captures_opt = UPS_PATTERN.captures(line);
@@ -94,9 +90,7 @@ async fn query_nut_upses(stream: &mut BufReader<TcpStream>, upses: &mut UpsVarMa
 }
 
 async fn query_nut_vars(stream: &mut BufReader<TcpStream>, upses: &mut UpsVarMap) -> ErrorResult<()> {
-    lazy_static! {
-        static ref VAR_PATTERN: Regex = Regex::new(r#"^VAR\s+(?P<ups>[\S]+)\s+(?P<var>[\S]+)\s+"(?P<val>[^"]*)"$"#).unwrap();
-    }
+    static VAR_PATTERN: LazyLock<Regex> = LazyLock::new(|| Regex::new(r#"^VAR\s+(?P<ups>[\S]+)\s+(?P<var>[\S]+)\s+"(?P<val>[^"]*)"$"#).unwrap());
 
     for (ups, vars) in upses.iter_mut() {
         let line_consumer = |line: &str| {

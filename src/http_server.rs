@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::convert::Infallible;
 use std::fmt::Write as _;
 use std::net::SocketAddr;
-use std::sync::Arc;
+use std::sync::{Arc, LazyLock};
 
 use http_body_util::Full;
 use hyper::body::{Bytes, Incoming};
@@ -10,7 +10,6 @@ use hyper::service::service_fn;
 use hyper::{Method, Request, Response, StatusCode};
 use hyper_util::rt::{TokioExecutor, TokioIo};
 use hyper_util::server::conn::auto;
-use lazy_static::lazy_static;
 use regex::Regex;
 use tokio::net::TcpListener;
 use tokio::sync::broadcast::Receiver;
@@ -151,10 +150,8 @@ async fn endpoint_metrics(config: &Config, query: Option<&str>, accept: Option<&
 }
 
 fn parse_target(query: Option<&str>) -> ErrorResult<String> {
-    lazy_static! {
-        // Match domain, IPv4 address or IPv6 addres, with optional port number
-        static ref TARGET_PATTERN: Regex = Regex::new(r#"^(?P<host>\[[^\]]+\]|[^:]+)(?::(?P<port>[0-9]+))?$"#).unwrap();
-    }
+    // Match domain, IPv4 address or IPv6 addres, with optional port number
+    static TARGET_PATTERN: LazyLock<Regex> = LazyLock::new(|| Regex::new(r#"^(?P<host>\[[^\]]+\]|[^:]+)(?::(?P<port>[0-9]+))?$"#).unwrap());
 
     let query_args: HashMap<String, String> = form_urlencoded::parse(query.unwrap_or("").as_bytes()).into_owned().collect();
     let target_raw = match query_args.get("target") {

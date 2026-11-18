@@ -1,6 +1,6 @@
 use std::collections::HashMap;
+use std::sync::LazyLock;
 
-use lazy_static::lazy_static;
 
 pub type VarMap = HashMap<String, String>;
 pub type UpsVarMap = HashMap<String, VarMap>;
@@ -495,44 +495,42 @@ pub static BASIC_METRICS: [Metric; 44] = [
     },
 ];
 
-lazy_static! {
-    // Contains all metrics names, in insertion order
-    pub static ref METRIC_NAMES: Vec<&'static str> = {
-        let mut vec: Vec<&'static str> = Vec::new();
-        vec.push(EXPORTER_INFO_METRIC.metric);
-        vec.push(SERVER_INFO_METRIC.metric);
-        vec.push(UPS_INFO_METRIC.metric);
-        vec.push(OLD_SERVER_INFO_METRIC.metric);
-        vec.push(UPS_STATUS_METRIC.metric);
-        for metric in BASIC_METRICS.iter() {
-            vec.push(metric.metric);
-        }
-        vec
-    };
+// Contains all metrics names, in insertion order
+pub static METRIC_NAMES: LazyLock<Vec<&'static str>> = LazyLock::new(|| {
+    let mut vec: Vec<&'static str> = Vec::new();
+    vec.push(EXPORTER_INFO_METRIC.metric);
+    vec.push(SERVER_INFO_METRIC.metric);
+    vec.push(UPS_INFO_METRIC.metric);
+    vec.push(OLD_SERVER_INFO_METRIC.metric);
+    vec.push(UPS_STATUS_METRIC.metric);
+    for metric in BASIC_METRICS.iter() {
+        vec.push(metric.metric);
+    }
+    vec
+});
 
-    // Contains all metrics, indexed by metric name
-    pub static ref METRICS: HashMap<&'static str, &'static Metric> = {
-        let mut map: HashMap<&'static str, &'static Metric> = HashMap::new();
-        map.insert(EXPORTER_INFO_METRIC.metric, &EXPORTER_INFO_METRIC);
-        map.insert(SERVER_INFO_METRIC.metric, &SERVER_INFO_METRIC);
-        map.insert(UPS_INFO_METRIC.metric, &UPS_INFO_METRIC);
-        map.insert(OLD_SERVER_INFO_METRIC.metric, &OLD_SERVER_INFO_METRIC);
-        map.insert(UPS_STATUS_METRIC.metric, &UPS_STATUS_METRIC);
-        for metric in BASIC_METRICS.iter() {
-            map.insert(metric.metric, metric);
-        }
-        map
-    };
+// Contains all metrics, indexed by metric name
+pub static METRICS: LazyLock<HashMap<&'static str, &'static Metric>> = LazyLock::new(|| {
+    let mut map: HashMap<&'static str, &'static Metric> = HashMap::new();
+    map.insert(EXPORTER_INFO_METRIC.metric, &EXPORTER_INFO_METRIC);
+    map.insert(SERVER_INFO_METRIC.metric, &SERVER_INFO_METRIC);
+    map.insert(UPS_INFO_METRIC.metric, &UPS_INFO_METRIC);
+    map.insert(OLD_SERVER_INFO_METRIC.metric, &OLD_SERVER_INFO_METRIC);
+    map.insert(UPS_STATUS_METRIC.metric, &UPS_STATUS_METRIC);
+    for metric in BASIC_METRICS.iter() {
+        map.insert(metric.metric, metric);
+    }
+    map
+});
 
-    // Contains all metrics based on NUT vars, indexed by var
-    pub static ref VAR_METRICS: HashMap<&'static str, Vec<&'static Metric>> = {
-        let mut map: HashMap<&'static str, Vec<&'static Metric>> = HashMap::new();
-        for metric in BASIC_METRICS.iter() {
-            map.entry(metric.nut_var).or_default().push(metric);
-        }
-        map
-    };
-}
+// Contains all metrics based on NUT vars, indexed by var
+pub static VAR_METRICS: LazyLock<HashMap<&'static str, Vec<&'static Metric>>> = LazyLock::new(|| {
+    let mut map: HashMap<&'static str, Vec<&'static Metric>> = HashMap::new();
+    for metric in BASIC_METRICS.iter() {
+        map.entry(metric.nut_var).or_default().push(metric);
+    }
+    map
+});
 
 // Print metrics as Markdown table.
 pub fn print_metrics() {
