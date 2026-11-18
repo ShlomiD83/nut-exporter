@@ -90,7 +90,7 @@ jobs:
           echo "Publish to Docker Hub: $PUBLISH (tags: latest, $DATE)" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
 
       - name: Login to Docker Hub
         if: steps.meta.outputs.publish == 'true'
