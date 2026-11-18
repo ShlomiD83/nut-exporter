@@ -1,7 +1,6 @@
 use std::collections::HashMap;
 use std::sync::LazyLock;
 
-
 pub type VarMap = HashMap<String, String>;
 pub type UpsVarMap = HashMap<String, VarMap>;
 pub type NutVersion = String;
