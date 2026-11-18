@@ -111,7 +111,9 @@ resources:
 
 ### Grafana
 
-[Example dashboard](https://grafana.com/grafana/dashboards/14371)
+Dashboard: [`dashboards/nut-exporter-charging-status.json`](dashboards/nut-exporter-charging-status.json). Import it in Grafana (Dashboards → New → Import) and pick your Prometheus data source. It shows UPS status (including a *Charging* state when online below 100%), runtime as `mm:ss`, load, battery charge, input/output voltage, frequency and beeper status.
+
+The original upstream dashboard is [14371](https://grafana.com/grafana/dashboards/14371).
 
 **Required plugin:** the UPS runtime is displayed as `mm:ss` with the [Dynamic Text](https://grafana.com/grafana/plugins/marcusolsson-dynamictext-panel/) panel plugin. Grafana installs it on startup when this environment variable is set on the Grafana container:
 
