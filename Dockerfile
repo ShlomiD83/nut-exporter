@@ -1,8 +1,8 @@
 ARG APP_VERSION=0.0.0-SNAPSHOT
 ARG APP_GID=5000
 ARG APP_UID=5000
-ARG ALPINE_VERSION=3.22
-ARG RUST_VERSION=1.98.1
+ARG ALPINE_VERSION=3.24
+ARG RUST_VERSION=1.100.0
 
 
 ## Builder stage (runs natively on the build host and cross-compiles a static musl binary)
