@@ -149,5 +149,6 @@ jobs:
           username: ${{ env.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
           repository: ${{ env.DOCKER_REPO }}
+          short-description: "Minimal amd64/arm64 Prometheus exporter for Network UPS Tools (NUT), based on HON95's project."
           readme-filepath: ./README.md
           enable-url-completion: true
