@@ -15,7 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Migrated to hyper 1.x / hyper-util / http-body-util and updated all dependencies.
-- Docker image is now `FROM scratch` with a static musl binary, published as `romekd/prometheus-nut-exporter` (`latest` + date tag, arm64).
+- Docker image is now `FROM scratch` with a static musl binary, published as `romekd/prometheus-nut-exporter` (`latest` + date tag, amd64 + arm64).
 
 ### Deprecated
 

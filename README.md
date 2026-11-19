@@ -1,4 +1,4 @@
-# Prometheus NUT Exporter (modernized ARM64 build)
+# Prometheus NUT Exporter (modernized amd64 + arm64 build)
 
 [![CI](https://github.com/ShlomiD83/nut-exporter/actions/workflows/ci.yml/badge.svg)](https://github.com/ShlomiD83/nut-exporter/actions/workflows/ci.yml)
 [![Docker pulls](https://img.shields.io/docker/pulls/romekd/prometheus-nut-exporter?label=Docker%20Hub)](https://hub.docker.com/r/romekd/prometheus-nut-exporter)
@@ -22,7 +22,7 @@ Differences from upstream:
 - Updated to current dependencies (hyper 1.x via hyper-util, tokio 1.5x, env_logger 0.11); unused `chrono`/`url` dependencies removed.
 - HTTP server serves both HTTP/1.1 and HTTP/2.
 - Fully static musl binary in a `FROM scratch` image (no OS layer), running as UID/GID 5000.
-- Image tags: `latest` and a build date tag (`YYYY-MM-DD`), built for `linux/arm64`. A new image is published only when the code, Cargo files or Dockerfile change (or on a manual CI run); README-only changes just update the Docker Hub description.
+- Image tags: `latest` and a build date tag (`YYYY-MM-DD`), multi-arch for `linux/amd64` and `linux/arm64`. A new image is published only when the code, Cargo files or Dockerfile change (or on a manual CI run); README-only changes just update the Docker Hub description.
 - CI runs clippy, an integration test against a mock NUT server, and `cargo audit` (RustSec advisories) on every push and weekly.
 - Dependabot opens weekly dependency PRs; they are merged automatically once CI passes, which also publishes a new image.
 
@@ -155,7 +155,7 @@ If you add the variable to an existing Grafana container, recreate the container
 
 ### Docker Image Versions
 
-Use `latest` for the newest build, or a date tag (e.g. `2026-11-18`) to pin a specific build. Images are built for `linux/arm64`.
+Use `latest` for the newest build, or a date tag (e.g. `2026-11-18`) to pin a specific build. Images are multi-arch (`linux/amd64`, `linux/arm64`); Docker pulls the right one automatically.
 
 ### Environment Variables
 
