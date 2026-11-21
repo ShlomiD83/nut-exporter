@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+  <title>Prometheus NUT Exporter</title>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1f2933"/>
+      <stop offset="1" stop-color="#111820"/>
+    </linearGradient>
+  </defs>
+  <rect width="256" height="256" rx="56" fill="url(#bg)"/>
+  <!-- battery body -->
+  <rect x="44" y="70" width="152" height="96" rx="16" fill="none" stroke="#e8edf2" stroke-width="12"/>
+  <!-- battery terminal -->
+  <rect x="200" y="98" width="16" height="40" rx="5" fill="#e8edf2"/>
+  <!-- charge fill -->
+  <rect x="60" y="86" width="120" height="64" rx="7" fill="#3fa34d"/>
+  <!-- lightning bolt -->
+  <path d="M128 90 L104 124 H122 L114 148 L144 110 H126 Z" fill="#ffffff"/>
+  <!-- metrics line (Prometheus orange) -->
+  <polyline points="44,218 84,202 116,210 152,190 184,198 212,186" fill="none" stroke="#e6522c" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="212" cy="186" r="9" fill="#e6522c"/>
+</svg>

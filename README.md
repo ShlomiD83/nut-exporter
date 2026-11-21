@@ -1,3 +1,5 @@
+<p align="center"><img src="https://raw.githubusercontent.com/ShlomiD83/nut-exporter/main/docs/logo.png" width="128" height="128" alt="Prometheus NUT Exporter logo"></p>
+
 # Prometheus NUT Exporter (modernized amd64 + arm64 build)
 
 [![CI](https://github.com/ShlomiD83/nut-exporter/actions/workflows/ci.yml/badge.svg)](https://github.com/ShlomiD83/nut-exporter/actions/workflows/ci.yml)
