@@ -20,4 +20,7 @@ log = "0.4"
 env_logger = "0.11"
 
 [profile.release]
-strip = "debuginfo"
+# Small static binary: strip all symbols, whole-program LTO, single codegen unit
+strip = true
+lto = true
+codegen-units = 1

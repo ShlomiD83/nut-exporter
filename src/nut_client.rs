@@ -1,9 +1,11 @@
 use std::collections::HashMap;
 use std::sync::LazyLock;
+use std::time::Duration;
 
 use regex::Regex;
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 use tokio::net::TcpStream;
+use tokio::time::timeout;
 
 use crate::common::ErrorResult;
 use crate::metrics::{NutVersion, UPS_DESCRIPTION_PSEUDOVAR, UpsVarMap, VarMap};
@@ -17,17 +19,24 @@ enum NutQueryListState {
     Error,
 }
 
+/// Max time to establish the TCP connection to the NUT server.
+const CONNECT_TIMEOUT: Duration = Duration::from_secs(5);
+/// Max time for the whole query exchange once connected.
+const QUERY_TIMEOUT: Duration = Duration::from_secs(10);
+
 pub async fn scrape_nut(target: &str) -> ErrorResult<(UpsVarMap, NutVersion)> {
     log::trace!("Connecting to NUT server: {}", target);
-    let raw_stream = match TcpStream::connect(target).await {
-        Ok(val) => val,
-        Err(err) => return Err(format!("Failed to connect to target: {}", err).into()),
+    let raw_stream = match timeout(CONNECT_TIMEOUT, TcpStream::connect(target)).await {
+        Ok(Ok(val)) => val,
+        Ok(Err(err)) => return Err(format!("Failed to connect to target: {}", err).into()),
+        Err(_) => return Err(format!("Failed to connect to target: timed out after {}s", CONNECT_TIMEOUT.as_secs()).into()),
     };
     let mut stream = BufReader::new(raw_stream);
 
-    match scrape_nut_upses(&mut stream).await {
-        Ok(val) => Ok(val),
-        Err(err) => Err(format!("Failed to communicate with target: {}", err).into()),
+    match timeout(QUERY_TIMEOUT, scrape_nut_upses(&mut stream)).await {
+        Ok(Ok(val)) => Ok(val),
+        Ok(Err(err)) => Err(format!("Failed to communicate with target: {}", err).into()),
+        Err(_) => Err(format!("Failed to communicate with target: timed out after {}s", QUERY_TIMEOUT.as_secs()).into()),
     }
 }
 

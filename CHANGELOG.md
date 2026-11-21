@@ -16,6 +16,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Migrated to hyper 1.x / hyper-util / http-body-util and updated all dependencies.
 - Docker image is now `FROM scratch` with a static musl binary, published as `romekd/prometheus-nut-exporter` (`latest` + date tag, amd64 + arm64).
+- Smaller binary: full symbol stripping, LTO and a single codegen unit (amd64 image ~7.4 MB -> ~4.3 MB).
+- Builder stage uses the official `rust:<version>-alpine` image, so Dependabot keeps Rust and Alpine up to date.
 
 ### Deprecated
 
@@ -24,6 +26,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Unused `chrono` dependency; `url` replaced by `form_urlencoded`.
 
 ### Fixed
+
+- NUT queries now time out (5 s to connect, 10 s for the exchange) instead of hanging when the NUT server or network stops responding.
 
 ### Security
 

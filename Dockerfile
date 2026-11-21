@@ -1,19 +1,12 @@
 ARG APP_VERSION=0.0.0-SNAPSHOT
 ARG APP_GID=5000
 ARG APP_UID=5000
-ARG ALPINE_VERSION=3.24
-ARG RUST_VERSION=1.100.0
 
 
 ## Builder stage (runs natively on the build host and cross-compiles a static musl binary)
-FROM --platform=$BUILDPLATFORM alpine:$ALPINE_VERSION AS builder
+# Rust + Alpine versions are pinned in this tag so Dependabot can bump them.
+FROM --platform=$BUILDPLATFORM rust:1.100.0-alpine3.24 AS builder
 WORKDIR /app
-
-# Install Rust
-RUN apk add --no-cache build-base rustup
-ARG RUST_VERSION
-RUN rustup-init --default-toolchain=$RUST_VERSION --profile=minimal -y
-ENV PATH="$PATH:/root/.cargo/bin"
 
 # Pick the Rust target for the requested platform
 ARG TARGETPLATFORM
