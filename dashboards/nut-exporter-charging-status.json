@@ -964,7 +964,7 @@
       "id": 25,
       "type": "stat",
       "title": "Energy",
-      "description": "Energy used by the equipment on the UPS (from ups.realpower): selected time range, and projected for a 30-day month at the same average draw.",
+      "description": "Energy used by the equipment on the UPS (from ups.realpower). \"In time range\" covers the period chosen in the time picker at the top right; \"Per month\" projects the same average draw over 30 days.",
       "datasource": {
         "type": "prometheus",
         "uid": "${DS_PROMETHEUS}"
@@ -978,7 +978,6 @@
       "fieldConfig": {
         "defaults": {
           "unit": "kwatth",
-          "decimals": 2,
           "color": {
             "mode": "fixed",
             "fixedColor": "dark-green"
@@ -1012,7 +1011,7 @@
           },
           "refId": "A",
           "expr": "sum(sum_over_time(nut_real_power_watts{ups=~\"${ups:pipe}\"}[$__range:1m])) * 60 / 3600000",
-          "legendFormat": "Selected range",
+          "legendFormat": "In time range",
           "instant": true,
           "range": false
         },
@@ -1034,7 +1033,7 @@
       "id": 26,
       "type": "stat",
       "title": "Cost",
-      "description": "Energy × the \"Price per kWh\" setting at the top of the dashboard. Set your currency under Standard options → Unit.",
+      "description": "Energy × \"Price per kWh\", minus the \"Discount (%)\" setting, in ₪. Change the currency under Standard options → Unit.",
       "datasource": {
         "type": "prometheus",
         "uid": "${DS_PROMETHEUS}"
@@ -1047,7 +1046,7 @@
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "none",
+          "unit": "currencyILS",
           "decimals": 2,
           "color": {
             "mode": "fixed",
@@ -1081,8 +1080,8 @@
             "uid": "${DS_PROMETHEUS}"
           },
           "refId": "A",
-          "expr": "sum(sum_over_time(nut_real_power_watts{ups=~\"${ups:pipe}\"}[$__range:1m])) * 60 / 3600000 * $kwh_price",
-          "legendFormat": "Selected range",
+          "expr": "sum(sum_over_time(nut_real_power_watts{ups=~\"${ups:pipe}\"}[$__range:1m])) * 60 / 3600000 * $kwh_price * (1 - $discount_pct / 100)",
+          "legendFormat": "In time range",
           "instant": true,
           "range": false
         },
@@ -1092,7 +1091,7 @@
             "uid": "${DS_PROMETHEUS}"
           },
           "refId": "B",
-          "expr": "sum(avg_over_time(nut_real_power_watts{ups=~\"${ups:pipe}\"}[$__range])) * 24 * 30 / 1000 * $kwh_price",
+          "expr": "sum(avg_over_time(nut_real_power_watts{ups=~\"${ups:pipe}\"}[$__range])) * 24 * 30 / 1000 * $kwh_price * (1 - $discount_pct / 100)",
           "legendFormat": "Per month",
           "instant": true,
           "range": false
@@ -1920,6 +1919,26 @@
             "selected": true,
             "text": "0.20",
             "value": "0.20"
+          }
+        ],
+        "hide": 0,
+        "skipUrlSync": false
+      },
+      {
+        "name": "discount_pct",
+        "label": "Discount (%)",
+        "description": "Discount subtracted from the cost, in percent.",
+        "type": "textbox",
+        "query": "7",
+        "current": {
+          "text": "7",
+          "value": "7"
+        },
+        "options": [
+          {
+            "selected": true,
+            "text": "7",
+            "value": "7"
           }
         ],
         "hide": 0,

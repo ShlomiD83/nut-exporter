@@ -155,7 +155,8 @@ If you add the variable to an existing Grafana container, recreate the container
 
 **Dashboard settings** (text boxes at the top of the dashboard):
 
-- **Price per kWh** (default `0.20`): your electricity tariff, used by the *Cost* panel. Set the currency symbol in the Cost panel under *Standard options → Unit*.
+- **Price per kWh** (default `0.20`): your electricity tariff, used by the *Cost* panel (shown in ₪; change the currency in the Cost panel under *Standard options → Unit*).
+- **Discount (%)** (default `7`): subtracted from the cost. Set it to `0` for no discount.
 - **UPS capacity (W)** (default `900`, an Eaton 5E 1500i): the UPS's real-power rating, used by *Load vs capacity*.
 
 To keep your values, save the dashboard with **Update default variable values** ticked.
