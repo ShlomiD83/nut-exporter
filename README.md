@@ -24,7 +24,7 @@ Differences from upstream:
 - Updated to current dependencies (hyper 1.x via hyper-util, tokio 1.5x, env_logger 0.11); unused `chrono`/`url` dependencies removed.
 - HTTP server serves both HTTP/1.1 and HTTP/2.
 - Optional background watcher (`WATCH_TARGET`) that checks NUT every 2 s and counts switches to battery, so even a few-second power blip shows up.
-- NUT queries time out (5 s connect, 10 s exchange) instead of hanging.
+- NUT queries time out instead of hanging, always within Prometheus' scrape timeout. If the NUT server can't be reached, the exporter still answers (HTTP 200) with `nut_scrape_success 0` instead of HTTP 503, so the dashboard can show *NUT unreachable*. Use `nut_scrape_success` rather than Prometheus' `up` to alert on an unreachable NUT server.
 - Fully static musl binary in a `FROM scratch` image (no OS layer), running as UID/GID 5000.
 - Image tags: `latest` and a build date tag (`YYYY-MM-DD`), multi-arch for `linux/amd64` and `linux/arm64`. A new image is published only when the code, Cargo files or Dockerfile change (or on a manual CI run); README-only changes just update the Docker Hub description.
 - CI runs clippy, an integration test against a mock NUT server, and `cargo audit` (RustSec advisories) on every push and weekly.

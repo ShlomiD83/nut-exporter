@@ -104,7 +104,7 @@
       "id": 13,
       "type": "stat",
       "title": "Status",
-      "description": "Online with battery charge below 100% is shown as Charging. On battery and Low battery retain their UPS status.",
+      "description": "Online with battery charge below 100% is shown as Charging. On battery and Low battery retain their UPS status. Shows \"NUT unreachable\" when the exporter can't reach the NUT server.",
       "datasource": {
         "type": "prometheus",
         "uid": "${DS_PROMETHEUS}"
@@ -135,6 +135,10 @@
                 },
                 "4": {
                   "text": "Charging"
+                },
+                "-1": {
+                  "text": "NUT unreachable",
+                  "color": "red"
                 }
               }
             }
@@ -194,7 +198,7 @@
           },
           "refId": "A",
           "exemplar": true,
-          "expr": "nut_status{ups=~\"${ups:pipe}\"} + (nut_status{ups=~\"${ups:pipe}\"} == bool 1) * (nut_battery_charge{ups=~\"${ups:pipe}\"} < bool 1) * 3",
+          "expr": "nut_status{ups=~\"${ups:pipe}\"} + (nut_status{ups=~\"${ups:pipe}\"} == bool 1) * (nut_battery_charge{ups=~\"${ups:pipe}\"} < bool 1) * 3 or on() ((min(nut_scrape_success) == 0) - 1)",
           "instant": true,
           "interval": "",
           "legendFormat": "{{ups}}"

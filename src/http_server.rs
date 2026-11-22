@@ -3,6 +3,7 @@ use std::convert::Infallible;
 use std::fmt::Write as _;
 use std::net::SocketAddr;
 use std::sync::{Arc, LazyLock};
+use std::time::Duration;
 
 use http_body_util::Full;
 use hyper::body::{Bytes, Incoming};
@@ -24,6 +25,11 @@ use crate::watcher;
 const CONTENT_TYPE_TEXT: &str = "text/plain; charset=UTF-8";
 const CONTENT_TYPE_OPENMETRICS: &str = "application/openmetrics-text; version=1.0.0; charset=UTF-8";
 const CONTENT_TYPE_OPENMETRICS_BASE: &str = "application/openmetrics-text";
+
+const SCRAPE_TIMEOUT_HEADER: &str = "x-prometheus-scrape-timeout-seconds";
+const SCRAPE_BUDGET_MARGIN_SECS: f64 = 0.5;
+const MIN_SCRAPE_BUDGET_SECS: f64 = 1.0;
+const MAX_SCRAPE_BUDGET_SECS: f64 = 15.0;
 
 type HttpResponse = Response<Full<Bytes>>;
 
@@ -84,7 +90,8 @@ async fn entrypoint(config: &Config, request: Request<Incoming>, remote_addr: So
         if is_method_get {
             let query = request.uri().query();
             let accept = request.headers().get("accept").and_then(|value| value.to_str().ok());
-            endpoint_metrics(config, query, accept).await
+            let budget = scrape_budget(request.headers().get(SCRAPE_TIMEOUT_HEADER).and_then(|value| value.to_str().ok()));
+            endpoint_metrics(config, query, accept, budget).await
         } else {
             endpoint_method_not_allowed()
         }
@@ -122,7 +129,16 @@ fn endpoint_method_not_allowed() -> HttpResponse {
     response(StatusCode::METHOD_NOT_ALLOWED, "Method not allowed\n")
 }
 
-async fn endpoint_metrics(config: &Config, query: Option<&str>, accept: Option<&str>) -> HttpResponse {
+/// Time allowed for the NUT query: Prometheus' scrape timeout minus a margin (so we can still answer with
+/// nut_scrape_success 0 before Prometheus gives up), capped to a sane range.
+fn scrape_budget(prometheus_timeout: Option<&str>) -> Duration {
+    let seconds = prometheus_timeout
+        .and_then(|value| value.trim().parse::<f64>().ok())
+        .map_or(MAX_SCRAPE_BUDGET_SECS, |timeout| timeout - SCRAPE_BUDGET_MARGIN_SECS);
+    Duration::from_secs_f64(seconds.clamp(MIN_SCRAPE_BUDGET_SECS, MAX_SCRAPE_BUDGET_SECS))
+}
+
+async fn endpoint_metrics(config: &Config, query: Option<&str>, accept: Option<&str>, budget: Duration) -> HttpResponse {
     // Check for and parse target
     let usage_message = format!("Usage: {}?target=<target>", config.http_path);
     let target = match parse_target(query) {
@@ -130,15 +146,23 @@ async fn endpoint_metrics(config: &Config, query: Option<&str>, accept: Option<&
         Err(err) => return response(StatusCode::BAD_REQUEST, format!("{}\n\n{}", err, usage_message)),
     };
 
-    // Try to scrape NUT server
-    let (upses, nut_version) = match scrape_nut(&target).await {
-        Ok(x) => x,
-        Err(err) => return response(StatusCode::SERVICE_UNAVAILABLE, err.to_string()),
+    // Try to scrape NUT server. On failure, still answer (with nut_scrape_success 0) so Prometheus keeps the
+    // exporter and watcher metrics instead of discarding the whole scrape.
+    let scraped = match tokio::time::timeout(budget, scrape_nut(&target)).await {
+        Ok(Ok(x)) => Some(x),
+        Ok(Err(err)) => {
+            log::warn!("Failed to scrape NUT server {}: {}", target, err);
+            None
+        },
+        Err(_) => {
+            log::warn!("Failed to scrape NUT server {}: no answer within {:.1}s", target, budget.as_secs_f64());
+            None
+        },
     };
 
     // Generate OpenMetrics output (plus background watcher counters, if this target is watched)
     let watched = watcher::snapshot(&target);
-    let content = build_openmetrics_content(&upses, &nut_version, watched.as_ref());
+    let content = build_openmetrics_content(scraped.as_ref().map(|(upses, version)| (upses, version.as_str())), watched.as_ref());
 
     // Set content type
     let content_type = match accept {

@@ -2,17 +2,25 @@ use std::fmt::Write as _;
 use std::collections::{HashMap, HashSet};
 
 use crate::meta::APP_VERSION;
-use crate::metrics::{EXPORTER_INFO_METRIC, LAST_ON_BATTERY_METRIC, Metric, METRIC_NAMES, METRICS, OLD_SERVER_INFO_METRIC, ON_BATTERY_EVENTS_METRIC, ON_BATTERY_SECONDS_METRIC, SERVER_INFO_METRIC, UPS_DESCRIPTION_PSEUDOVAR, UPS_INFO_METRIC, UPS_STATUS_ELEMENTS, UPS_STATUS_METRIC, UpsVarMap, VAR_METRICS, VarMap, VarTransform, WATCHER_UP_METRIC};
+use crate::metrics::{EXPORTER_INFO_METRIC, LAST_ON_BATTERY_METRIC, Metric, METRIC_NAMES, METRICS, OLD_SERVER_INFO_METRIC, ON_BATTERY_EVENTS_METRIC, ON_BATTERY_SECONDS_METRIC, SCRAPE_SUCCESS_METRIC, SERVER_INFO_METRIC, UPS_DESCRIPTION_PSEUDOVAR, UPS_INFO_METRIC, UPS_STATUS_ELEMENTS, UPS_STATUS_METRIC, UpsVarMap, VAR_METRICS, VarMap, VarTransform, WATCHER_UP_METRIC};
 use crate::watcher::WatchSnapshot;
 
-pub fn build_openmetrics_content(upses: &UpsVarMap, nut_version: &str, watched: Option<&WatchSnapshot>) -> String {
+/// Build the metrics page. `scraped` is None when the NUT server couldn't be scraped; the page then
+/// only contains exporter info, `nut_scrape_success 0` and the background watcher metrics.
+pub fn build_openmetrics_content(scraped: Option<(&UpsVarMap, &str)>, watched: Option<&WatchSnapshot>) -> String {
     // Use vec for stable ordering of metrics within a metric family
     let mut metric_lines: HashMap<String, Vec<String>> = METRICS.keys().map(|m| ((*m).to_owned(), Vec::new())).collect();
+    let empty_upses = UpsVarMap::new();
+    let upses = scraped.map_or(&empty_upses, |(upses, _)| upses);
 
     // Exporter and server special
     metric_lines.get_mut(EXPORTER_INFO_METRIC.metric).unwrap().push(print_exporter_info_metric());
-    metric_lines.get_mut(SERVER_INFO_METRIC.metric).unwrap().push(print_server_info_metric(nut_version));
-    metric_lines.get_mut(OLD_SERVER_INFO_METRIC.metric).unwrap().push(print_old_server_info_metric(nut_version));
+    metric_lines.get_mut(SCRAPE_SUCCESS_METRIC.metric).unwrap()
+        .push(format!("{} {}\n", SCRAPE_SUCCESS_METRIC.metric, u8::from(scraped.is_some())));
+    if let Some((_, nut_version)) = scraped {
+        metric_lines.get_mut(SERVER_INFO_METRIC.metric).unwrap().push(print_server_info_metric(nut_version));
+        metric_lines.get_mut(OLD_SERVER_INFO_METRIC.metric).unwrap().push(print_old_server_info_metric(nut_version));
+    }
 
     // Generate metric lines for all vars for all UPSes
     for (ups, vars) in upses.iter() {
@@ -34,8 +42,7 @@ pub fn build_openmetrics_content(upses: &UpsVarMap, nut_version: &str, watched: 
     // Background watcher counters (counter samples carry the "_total" suffix)
     if let Some(watch) = watched {
         metric_lines.get_mut(WATCHER_UP_METRIC.metric).unwrap()
-            .push(format!("{} {}
-", WATCHER_UP_METRIC.metric, u8::from(watch.up)));
+            .push(format!("{} {}\n", WATCHER_UP_METRIC.metric, u8::from(watch.up)));
     }
     for snapshot in watched.map_or(&[][..], |w| &w.upses[..]) {
         let ups = escape_om(&snapshot.ups);

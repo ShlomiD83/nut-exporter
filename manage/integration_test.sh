@@ -40,6 +40,7 @@ scrape_content=$(scrape) || fail "Scrape failed."
 
 # Validate result
 echo "$scrape_content" | grep -q '^nut_status{ups="alpha"} 1$' || fail "Scraped result contains errors."
+echo "$scrape_content" | grep -q '^nut_scrape_success 1$' || fail "Scrape not marked successful."
 echo "$scrape_content" | grep -q '^nut_watcher_up 1$' || fail "Watcher is not up."
 echo "$scrape_content" | grep -q '^nut_on_battery_events_total{ups="alpha"} 0$' || fail "Watcher counted an outage that didn't happen."
 
@@ -55,4 +56,13 @@ seconds=$(echo "$scrape_content" | sed -n 's/^nut_on_battery_seconds_total{ups="
 awk -v s="$seconds" 'BEGIN { exit !(s >= 2 && s <= 7) }' || fail "Unexpected time on battery: ${seconds}s (expected ~4s)."
 echo "$scrape_content" | grep -q '^nut_last_on_battery_timestamp_seconds{ups="alpha"} ' || fail "Missing last outage timestamp."
 
-echo "Success! (outage counted: ${seconds}s on battery)"
+# NUT server goes away: the exporter must still answer, flagging the failed scrape and the failing watcher
+kill -9 $mock_pid &>/dev/null; wait $mock_pid 2>/dev/null
+sleep 3
+scrape_content=$(scrape) || fail "Exporter stopped answering when the NUT server was down."
+echo "$scrape_content" | grep -q '^nut_scrape_success 0$' || fail "Failed NUT scrape not flagged."
+echo "$scrape_content" | grep -q '^nut_watcher_up 0$' || fail "Watcher not flagged as failing."
+echo "$scrape_content" | grep -q '^nut_on_battery_events_total{ups="alpha"} 1$' || fail "Watcher counters lost while NUT was down."
+echo "$scrape_content" | grep -q '^nut_status{' && fail "UPS metrics present although NUT was down."
+
+echo "Success! (outage counted: ${seconds}s on battery; NUT-down state reported)"

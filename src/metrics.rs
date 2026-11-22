@@ -77,6 +77,15 @@ pub const UPS_STATUS_METRIC: Metric = Metric {
     var_transform: VarTransform::None,
     is_integer: true,
 };
+pub const SCRAPE_SUCCESS_METRIC: Metric = Metric {
+    metric: "nut_scrape_success",
+    help: "1 if the NUT server could be scraped, 0 if not (the UPS metrics are then missing).",
+    type_: "gauge",
+    unit: "",
+    nut_var: "",
+    var_transform: VarTransform::None,
+    is_integer: true,
+};
 // Background watcher metrics (only present when the target is listed in WATCH_TARGET)
 pub const WATCHER_UP_METRIC: Metric = Metric {
     metric: "nut_watcher_up",
@@ -539,6 +548,7 @@ pub static METRIC_NAMES: LazyLock<Vec<&'static str>> = LazyLock::new(|| {
     vec.push(UPS_INFO_METRIC.metric);
     vec.push(OLD_SERVER_INFO_METRIC.metric);
     vec.push(UPS_STATUS_METRIC.metric);
+    vec.push(SCRAPE_SUCCESS_METRIC.metric);
     vec.push(WATCHER_UP_METRIC.metric);
     vec.push(ON_BATTERY_EVENTS_METRIC.metric);
     vec.push(ON_BATTERY_SECONDS_METRIC.metric);
@@ -557,6 +567,7 @@ pub static METRICS: LazyLock<HashMap<&'static str, &'static Metric>> = LazyLock:
     map.insert(UPS_INFO_METRIC.metric, &UPS_INFO_METRIC);
     map.insert(OLD_SERVER_INFO_METRIC.metric, &OLD_SERVER_INFO_METRIC);
     map.insert(UPS_STATUS_METRIC.metric, &UPS_STATUS_METRIC);
+    map.insert(SCRAPE_SUCCESS_METRIC.metric, &SCRAPE_SUCCESS_METRIC);
     map.insert(WATCHER_UP_METRIC.metric, &WATCHER_UP_METRIC);
     map.insert(ON_BATTERY_EVENTS_METRIC.metric, &ON_BATTERY_EVENTS_METRIC);
     map.insert(ON_BATTERY_SECONDS_METRIC.metric, &ON_BATTERY_SECONDS_METRIC);
@@ -590,6 +601,7 @@ pub fn print_metrics() {
     print_metric(&UPS_INFO_METRIC);
     print_metric(&OLD_SERVER_INFO_METRIC);
     print_metric(&UPS_STATUS_METRIC);
+    print_metric(&SCRAPE_SUCCESS_METRIC);
     print_metric(&WATCHER_UP_METRIC);
     print_metric(&ON_BATTERY_EVENTS_METRIC);
     print_metric(&ON_BATTERY_SECONDS_METRIC);
