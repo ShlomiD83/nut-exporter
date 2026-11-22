@@ -1076,7 +1076,7 @@
       "id": 25,
       "type": "stat",
       "title": "Energy (${cost_period:text})",
-      "description": "Energy used by the equipment on the UPS (ups.realpower) in the month chosen with \"Cost period\" (this month so far, or all of last month), and projected for a full month at the same average draw. Ignores the dashboard time picker.",
+      "description": "Energy used by the equipment on the UPS (ups.realpower) in the month chosen with \"Cost period\" (this month so far, or all of last month), and projected for the whole month (its real length: 28–31 days) at the same average draw. Ignores the dashboard time picker.",
       "datasource": {
         "type": "prometheus",
         "uid": "${DS_PROMETHEUS}"
@@ -1133,7 +1133,7 @@
             "uid": "${DS_PROMETHEUS}"
           },
           "refId": "B",
-          "expr": "sum(avg_over_time(nut_real_power_watts{ups=~\"${ups:pipe}\"}[$__range])) * 24 * 30 / 1000",
+          "expr": "sum(avg_over_time(nut_real_power_watts{ups=~\"${ups:pipe}\"}[$__range])) * 24 * scalar(days_in_month()) / 1000",
           "legendFormat": "Projected month",
           "instant": true,
           "range": false
@@ -1148,7 +1148,7 @@
       "id": 26,
       "type": "stat",
       "title": "Cost (${cost_period:text})",
-      "description": "Cost for the month chosen with \"Cost period\" (this month so far, or all of last month), and projected for a full month: energy × \"Price per kWh\", minus \"Discount (%)\", shown in the selected Currency. Ignores the dashboard time picker.",
+      "description": "Cost for the month chosen with \"Cost period\" (this month so far, or all of last month), and projected for the whole month (its real length: 28–31 days): energy × \"Price per kWh\", minus \"Discount (%)\", shown in the selected Currency. Ignores the dashboard time picker.",
       "datasource": {
         "type": "prometheus",
         "uid": "${DS_PROMETHEUS}"
@@ -1279,7 +1279,7 @@
             "uid": "${DS_PROMETHEUS}"
           },
           "refId": "Projected_ILS",
-          "expr": "(sum(avg_over_time(nut_real_power_watts{ups=~\"${ups:pipe}\"}[$__range])) * 24 * 30 / 1000 * $kwh_price * (1 - ($discount_pct + 0) / 100)) and on() (vector($currency) == 1)",
+          "expr": "(sum(avg_over_time(nut_real_power_watts{ups=~\"${ups:pipe}\"}[$__range])) * 24 * scalar(days_in_month()) / 1000 * $kwh_price * (1 - ($discount_pct + 0) / 100)) and on() (vector($currency) == 1)",
           "legendFormat": "Projected month",
           "instant": true,
           "range": false
@@ -1301,7 +1301,7 @@
             "uid": "${DS_PROMETHEUS}"
           },
           "refId": "Projected_USD",
-          "expr": "(sum(avg_over_time(nut_real_power_watts{ups=~\"${ups:pipe}\"}[$__range])) * 24 * 30 / 1000 * $kwh_price * (1 - ($discount_pct + 0) / 100)) and on() (vector($currency) == 2)",
+          "expr": "(sum(avg_over_time(nut_real_power_watts{ups=~\"${ups:pipe}\"}[$__range])) * 24 * scalar(days_in_month()) / 1000 * $kwh_price * (1 - ($discount_pct + 0) / 100)) and on() (vector($currency) == 2)",
           "legendFormat": "Projected month",
           "instant": true,
           "range": false
@@ -1323,7 +1323,7 @@
             "uid": "${DS_PROMETHEUS}"
           },
           "refId": "Projected_EUR",
-          "expr": "(sum(avg_over_time(nut_real_power_watts{ups=~\"${ups:pipe}\"}[$__range])) * 24 * 30 / 1000 * $kwh_price * (1 - ($discount_pct + 0) / 100)) and on() (vector($currency) == 3)",
+          "expr": "(sum(avg_over_time(nut_real_power_watts{ups=~\"${ups:pipe}\"}[$__range])) * 24 * scalar(days_in_month()) / 1000 * $kwh_price * (1 - ($discount_pct + 0) / 100)) and on() (vector($currency) == 3)",
           "legendFormat": "Projected month",
           "instant": true,
           "range": false
