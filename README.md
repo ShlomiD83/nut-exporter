@@ -153,6 +153,15 @@ services:
 
 If you add the variable to an existing Grafana container, recreate the container (e.g. `docker compose up -d grafana`) so it picks up the change.
 
+**Dashboard settings** (text boxes at the top of the dashboard):
+
+- **Price per kWh** (default `0.20`): your electricity tariff, used by the *Cost* panel. Set the currency symbol in the Cost panel under *Standard options → Unit*.
+- **UPS capacity (W)** (default `900`, an Eaton 5E 1500i): the UPS's real-power rating, used by *Load vs capacity*.
+
+To keep your values, save the dashboard with **Update default variable values** ticked.
+
+The *Power*, *Energy*, *Cost* and *Load vs capacity* panels need a UPS that reports `ups.realpower`; the outage panels work with any UPS (`ups.status`).
+
 ## Configuration
 
 ### Docker Image Versions

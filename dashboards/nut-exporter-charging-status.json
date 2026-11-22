@@ -40,6 +40,18 @@
       "id": "timeseries",
       "name": "Time series",
       "version": ""
+    },
+    {
+      "type": "panel",
+      "id": "state-timeline",
+      "name": "State timeline",
+      "version": ""
+    },
+    {
+      "type": "panel",
+      "id": "bargauge",
+      "name": "Bar gauge",
+      "version": ""
     }
   ],
   "annotations": {
@@ -714,6 +726,464 @@
       ]
     },
     {
+      "id": 22,
+      "type": "state-timeline",
+      "title": "Power source (green = mains, red = on battery)",
+      "description": "When the UPS ran on mains (green) or on battery (red). Hover a red block to see when the outage started, ended and how long it lasted.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 16,
+        "x": 0,
+        "y": 4
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "value": null,
+                "color": "dark-green"
+              },
+              {
+                "value": 1,
+                "color": "red"
+              }
+            ]
+          },
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "0": {
+                  "text": "Mains",
+                  "color": "dark-green",
+                  "index": 0
+                },
+                "1": {
+                  "text": "On battery",
+                  "color": "red",
+                  "index": 1
+                }
+              }
+            }
+          ],
+          "custom": {
+            "fillOpacity": 80,
+            "lineWidth": 0,
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "mergeValues": true,
+        "showValue": "never",
+        "alignValue": "left",
+        "rowHeight": 0.8,
+        "legend": {
+          "showLegend": false,
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none",
+          "hideZeros": false
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "refId": "A",
+          "expr": "max by (ups) (nut_ups_status{ups=~\"${ups:pipe}\", status=\"OB\"})",
+          "legendFormat": "{{ups}}",
+          "instant": false,
+          "range": true
+        }
+      ],
+      "pluginVersion": "13.2.2"
+    },
+    {
+      "id": 23,
+      "type": "stat",
+      "title": "Outages",
+      "description": "Number of switches to battery in the selected time range.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 4,
+        "x": 16,
+        "y": 4
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "decimals": 0,
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "value": null,
+                "color": "dark-green"
+              },
+              {
+                "value": 1,
+                "color": "red"
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "text": {},
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "refId": "A",
+          "expr": "ceil(changes(nut_ups_status{ups=~\"${ups:pipe}\", status=\"OB\"}[$__range]) / 2)",
+          "legendFormat": "{{ups}}",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "pluginVersion": "13.2.2"
+    },
+    {
+      "id": 24,
+      "type": "stat",
+      "title": "Time on battery",
+      "description": "Total time spent on battery in the selected time range (1-minute resolution).",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 4,
+        "x": 20,
+        "y": 4
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "decimals": 0,
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "value": null,
+                "color": "dark-green"
+              },
+              {
+                "value": 1,
+                "color": "red"
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "text": {},
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "refId": "A",
+          "expr": "sum_over_time(nut_ups_status{ups=~\"${ups:pipe}\", status=\"OB\"}[$__range:1m]) * 60",
+          "legendFormat": "{{ups}}",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "pluginVersion": "13.2.2"
+    },
+    {
+      "id": 25,
+      "type": "stat",
+      "title": "Energy",
+      "description": "Energy used by the equipment on the UPS (from ups.realpower): selected time range, and projected for a 30-day month at the same average draw.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 0,
+        "y": 9
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "kwatth",
+          "decimals": 2,
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "dark-green"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "text": {},
+        "textMode": "value_and_name",
+        "wideLayout": true
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "refId": "A",
+          "expr": "sum(sum_over_time(nut_real_power_watts{ups=~\"${ups:pipe}\"}[$__range:1m])) * 60 / 3600000",
+          "legendFormat": "Selected range",
+          "instant": true,
+          "range": false
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "refId": "B",
+          "expr": "sum(avg_over_time(nut_real_power_watts{ups=~\"${ups:pipe}\"}[$__range])) * 24 * 30 / 1000",
+          "legendFormat": "Per month",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "pluginVersion": "13.2.2"
+    },
+    {
+      "id": 26,
+      "type": "stat",
+      "title": "Cost",
+      "description": "Energy × the \"Price per kWh\" setting at the top of the dashboard. Set your currency under Standard options → Unit.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 6,
+        "y": 9
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "decimals": 2,
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "dark-green"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "text": {},
+        "textMode": "value_and_name",
+        "wideLayout": true
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "refId": "A",
+          "expr": "sum(sum_over_time(nut_real_power_watts{ups=~\"${ups:pipe}\"}[$__range:1m])) * 60 / 3600000 * $kwh_price",
+          "legendFormat": "Selected range",
+          "instant": true,
+          "range": false
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "refId": "B",
+          "expr": "sum(avg_over_time(nut_real_power_watts{ups=~\"${ups:pipe}\"}[$__range])) * 24 * 30 / 1000 * $kwh_price",
+          "legendFormat": "Per month",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "pluginVersion": "13.2.2"
+    },
+    {
+      "id": 27,
+      "type": "bargauge",
+      "title": "Load vs capacity ($ups_capacity_w W)",
+      "description": "Real power drawn as a share of the UPS's rated real-power capacity (\"UPS capacity (W)\" setting; ~900 W for an Eaton 5E 1500i).",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 12,
+        "x": 12,
+        "y": 9
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "decimals": 0,
+          "min": 0,
+          "max": 1,
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "value": null,
+                "color": "dark-green"
+              },
+              {
+                "value": 0.6,
+                "color": "#EAB839"
+              },
+              {
+                "value": 0.8,
+                "color": "red"
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "displayMode": "basic",
+        "orientation": "horizontal",
+        "showUnfilled": true,
+        "valueMode": "color",
+        "namePlacement": "auto",
+        "sizing": "auto",
+        "minVizHeight": 16,
+        "minVizWidth": 8,
+        "maxVizHeight": 300,
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "legend": {
+          "showLegend": false,
+          "displayMode": "list",
+          "placement": "bottom",
+          "calcs": []
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "refId": "A",
+          "expr": "nut_real_power_watts{ups=~\"${ups:pipe}\"} / $ups_capacity_w",
+          "legendFormat": "{{ups}}",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "pluginVersion": "13.2.2"
+    },
+    {
       "id": 5,
       "type": "timeseries",
       "title": "Battery Charge [$smoothing_interval]",
@@ -725,7 +1195,7 @@
         "h": 6,
         "w": 12,
         "x": 0,
-        "y": 4
+        "y": 13
       },
       "fieldConfig": {
         "defaults": {
@@ -834,7 +1304,7 @@
         "h": 6,
         "w": 12,
         "x": 12,
-        "y": 4
+        "y": 13
       },
       "fieldConfig": {
         "defaults": {
@@ -943,7 +1413,7 @@
         "h": 6,
         "w": 12,
         "x": 0,
-        "y": 10
+        "y": 19
       },
       "fieldConfig": {
         "defaults": {
@@ -1052,7 +1522,7 @@
         "h": 6,
         "w": 12,
         "x": 12,
-        "y": 10
+        "y": 19
       },
       "fieldConfig": {
         "defaults": {
@@ -1154,7 +1624,7 @@
         "h": 6,
         "w": 12,
         "x": 0,
-        "y": 16
+        "y": 25
       },
       "fieldConfig": {
         "defaults": {
@@ -1256,7 +1726,7 @@
         "h": 6,
         "w": 12,
         "x": 12,
-        "y": 16
+        "y": 25
       },
       "fieldConfig": {
         "defaults": {
@@ -1432,6 +1902,46 @@
         "multi": false,
         "includeAll": false,
         "allowCustomValue": true,
+        "hide": 0,
+        "skipUrlSync": false
+      },
+      {
+        "name": "kwh_price",
+        "label": "Price per kWh",
+        "description": "Your electricity price per kWh, used by the Cost panel.",
+        "type": "textbox",
+        "query": "0.20",
+        "current": {
+          "text": "0.20",
+          "value": "0.20"
+        },
+        "options": [
+          {
+            "selected": true,
+            "text": "0.20",
+            "value": "0.20"
+          }
+        ],
+        "hide": 0,
+        "skipUrlSync": false
+      },
+      {
+        "name": "ups_capacity_w",
+        "label": "UPS capacity (W)",
+        "description": "Rated real-power capacity of the UPS in watts.",
+        "type": "textbox",
+        "query": "900",
+        "current": {
+          "text": "900",
+          "value": "900"
+        },
+        "options": [
+          {
+            "selected": true,
+            "text": "900",
+            "value": "900"
+          }
+        ],
         "hide": 0,
         "skipUrlSync": false
       }
