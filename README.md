@@ -17,7 +17,7 @@
 >
 > See [Grafana](#grafana) below for a full example.
 
-Fork of [HON95/prometheus-nut-exporter](https://github.com/HON95/prometheus-nut-exporter), published as [`romekd/prometheus-nut-exporter`](https://hub.docker.com/r/romekd/prometheus-nut-exporter).
+Fork of [HON95/prometheus-nut-exporter](https://github.com/HON95/prometheus-nut-exporter), published as [`romekd/prometheus-nut-exporter`](https://hub.docker.com/r/romekd/prometheus-nut-exporter) on Docker Hub and [`ghcr.io/shlomid83/nut-exporter`](https://github.com/ShlomiD83/nut-exporter/pkgs/container/nut-exporter) on GitHub Container Registry (same image, same tags).
 
 Differences from upstream:
 
@@ -157,7 +157,7 @@ If you add the variable to an existing Grafana container, recreate the container
 
 ### Docker Image Versions
 
-Use `latest` for the newest build, or a date tag (e.g. `2026-11-18`) to pin a specific build. Images are multi-arch (`linux/amd64`, `linux/arm64`); Docker pulls the right one automatically.
+Use `latest` for the newest build, or a date tag (e.g. `2026-11-18`) to pin a specific build. Images are multi-arch (`linux/amd64`, `linux/arm64`); Docker pulls the right one automatically. Both `romekd/prometheus-nut-exporter` and `ghcr.io/shlomid83/nut-exporter` carry the same tags.
 
 ### Environment Variables
 
