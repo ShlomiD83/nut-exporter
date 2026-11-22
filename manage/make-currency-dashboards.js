@@ -15,9 +15,13 @@ const VARIANTS = [
 
 function setTextbox(d, name, value) {
   const v = d.templating.list.find((x) => x.name === name);
-  v.query = value;
   v.current = { text: value, value };
-  v.options = [{ selected: true, text: value, value }];
+  if (v.type === "custom") {
+    v.options = v.options.map((o) => ({ ...o, selected: o.value === value }));
+  } else {
+    v.query = value;
+    v.options = [{ selected: true, text: value, value }];
+  }
 }
 
 for (const variant of VARIANTS) {

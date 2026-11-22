@@ -1092,7 +1092,7 @@
             "uid": "${DS_PROMETHEUS}"
           },
           "refId": "A",
-          "expr": "sum(sum_over_time(nut_real_power_watts{ups=~\"${ups:pipe}\"}[$__range:1m])) * 60 / 3600000 * $kwh_price * (1 - $discount_pct / 100)",
+          "expr": "sum(sum_over_time(nut_real_power_watts{ups=~\"${ups:pipe}\"}[$__range:1m])) * 60 / 3600000 * $kwh_price * (1 - ($discount_pct + 0) / 100)",
           "legendFormat": "Total",
           "instant": true,
           "range": false
@@ -1103,7 +1103,7 @@
             "uid": "${DS_PROMETHEUS}"
           },
           "refId": "B",
-          "expr": "sum(avg_over_time(nut_real_power_watts{ups=~\"${ups:pipe}\"}[$__range])) * 24 * 30 / 1000 * $kwh_price * (1 - $discount_pct / 100)",
+          "expr": "sum(avg_over_time(nut_real_power_watts{ups=~\"${ups:pipe}\"}[$__range])) * 24 * 30 / 1000 * $kwh_price * (1 - ($discount_pct + 0) / 100)",
           "legendFormat": "Projected month",
           "instant": true,
           "range": false
@@ -1887,7 +1887,7 @@
       {
         "name": "discount_pct",
         "label": "Discount (%)",
-        "description": "Discount subtracted from the cost, in percent.",
+        "description": "Discount subtracted from the cost, in percent. Leave empty or 0 for no discount.",
         "type": "textbox",
         "query": "7",
         "current": {

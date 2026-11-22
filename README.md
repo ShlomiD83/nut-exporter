@@ -164,7 +164,7 @@ If you add the variable to an existing Grafana container, recreate the container
 - **Cost period**: *This month* (1st of the month until now) or *Last month* (the whole previous month), for the *Energy* and *Cost* panels. They ignore the dashboard time picker.
 
 - **Price per kWh** (default `0.6352` ₪ / `0.17` $ / `0.30` €): your electricity tariff, used by the *Cost* panel.
-- **Discount (%)** (default `7` in the ₪ dashboard, `0` in the others): subtracted from the cost.
+- **Discount (%)** (default `7` in the ₪ dashboard, `0` in the others): subtracted from the cost. Leave it empty or `0` for no discount.
 
 To keep your values, save the dashboard with **Update default variable values** ticked.
 
