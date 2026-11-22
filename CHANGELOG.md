@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Optional background watcher (`WATCH_TARGET`): checks NUT every 2 s and exposes `nut_on_battery_events_total`, `nut_on_battery_seconds_total` `nut_last_on_battery_timestamp_seconds` and `nut_watcher_up` (a Watcher card on the dashboards), so outages shorter than the Prometheus scrape interval are counted.
-- Grafana dashboard (`dashboards/nut-exporter-charging-status.json`) with a Currency setting (₪ / $ / €), power, outage timeline/count/time on battery, energy and cost per period (Cost period: this month, last month, last 3 / 6 months, this year; price and discount settings), and On battery markers.
+- Grafana dashboard (`dashboards/nut-exporter-charging-status.json`) with a Currency setting (₪ / $ / €), power, outage timeline/count/time on battery, energy and cost for the current month (total and projected month; price and discount settings), and On battery markers.
 - CI integration test simulates a short outage and checks the watcher counts it.
 - HTTP/2 support (hyper-util auto connection builder).
 - `cargo audit` security check and Dependabot in CI.

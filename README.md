@@ -127,7 +127,7 @@ resources:
 
 ### Grafana
 
-Dashboard: [`dashboards/nut-exporter-charging-status.json`](https://github.com/ShlomiD83/nut-exporter/blob/main/dashboards/nut-exporter-charging-status.json) ([download JSON](https://raw.githubusercontent.com/ShlomiD83/nut-exporter/main/dashboards/nut-exporter-charging-status.json)). Import it in Grafana (Dashboards → New → Import) and pick your Prometheus data source; importing it again updates it in place. The screenshot above uses demo data. It shows UPS status (including a *Charging* state when online below 100%), runtime as `mm:ss`, load, battery charge, input/output voltage, frequency and beeper status, power drawn, an outage timeline with outage count and time on battery, and energy and cost for this month, last month, the last 3 or 6 months, or this year.
+Dashboard: [`dashboards/nut-exporter-charging-status.json`](https://github.com/ShlomiD83/nut-exporter/blob/main/dashboards/nut-exporter-charging-status.json) ([download JSON](https://raw.githubusercontent.com/ShlomiD83/nut-exporter/main/dashboards/nut-exporter-charging-status.json)). Import it in Grafana (Dashboards → New → Import) and pick your Prometheus data source; importing it again updates it in place. The screenshot above uses demo data. It shows UPS status (including a *Charging* state when online below 100%), runtime as `mm:ss`, load, battery charge, input/output voltage, frequency and beeper status, power drawn, an outage timeline with outage count and time on battery, and energy and cost for the current month (total so far and projected month).
 
 The original upstream dashboard is [14371](https://grafana.com/grafana/dashboards/14371).
 
@@ -159,17 +159,13 @@ If you add the variable to an existing Grafana container, recreate the container
 
 **Dashboard settings** (at the top of the dashboard):
 
-- **Cost period**, for the *Energy* and *Cost* panels (they ignore the dashboard time picker):
-  - *This month*: 1st of the month until now, plus the projected month (using the real month length, 28–31 days).
-  - *Last month*: the whole previous calendar month.
-  - *Last 3 months* / *Last 6 months*: rolling, counted back from today, plus the monthly average.
-  - *This year*: 1 January until now, plus the projected year (365 or 366 days).
-
 - **Currency** (default ₪): the currency symbol for the *Cost* panel: ₪, $ or €.
 - **Price per kWh** (default `0.6352`): your electricity tariff in the selected currency, used by the *Cost* panel. Switching the currency changes only the symbol, so set the price to match.
 - **Discount (%)** (default `7`): subtracted from the cost. Leave it empty or `0` for no discount.
 
 To keep your values, save the dashboard with **Update default variable values** ticked.
+
+**Prometheus retention:** the *Energy* and *Cost* panels add up the whole current month, so Prometheus must keep at least **35 days** of data (its default is 15 days). Set it on the Prometheus container, e.g. `--storage.tsdb.retention.time=35d`.
 
 The *Power*, *Energy* and *Cost* panels need a UPS that reports `ups.realpower`; the outage panels work with any UPS (`ups.status`).
 

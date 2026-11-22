@@ -1075,8 +1075,8 @@
     {
       "id": 25,
       "type": "stat",
-      "title": "Energy (${cost_period:text})",
-      "description": "Energy used by the equipment on the UPS (ups.realpower) in the \"Cost period\": this month so far, last month, the last 3 or 6 months, or this year so far. The second value is the projected month (this month), the whole month (last month), the monthly average (3 / 6 months) or the projected year (this year). Ignores the dashboard time picker.",
+      "title": "Energy (This month)",
+      "description": "Energy used by the equipment on the UPS (ups.realpower) from the 1st of this month until now, and projected for the whole month (its real length, 28–31 days) at the same average draw. Ignores the dashboard time picker. Prometheus must keep at least 35 days of data.",
       "datasource": {
         "type": "prometheus",
         "uid": "${DS_PROMETHEUS}"
@@ -1133,22 +1133,21 @@
             "uid": "${DS_PROMETHEUS}"
           },
           "refId": "B",
-          "expr": "sum(avg_over_time(nut_real_power_watts{ups=~\"${ups:pipe}\"}[$__range])) * ${period_hours} / 1000",
-          "legendFormat": "${period_label}",
+          "expr": "sum(avg_over_time(nut_real_power_watts{ups=~\"${ups:pipe}\"}[$__range])) * 24 * scalar(days_in_month()) / 1000",
+          "legendFormat": "Projected month",
           "instant": true,
           "range": false
         }
       ],
       "pluginVersion": "13.2.2",
-      "timeFrom": "$period_from",
-      "hideTimeOverride": true,
-      "timeShift": "$period_shift"
+      "timeFrom": "now/M",
+      "hideTimeOverride": true
     },
     {
       "id": 26,
       "type": "stat",
-      "title": "Cost (${cost_period:text})",
-      "description": "Cost for the \"Cost period\": energy × \"Price per kWh\", minus \"Discount (%)\", in the selected Currency. The second value is the projected month (this month), the whole month (last month), the monthly average (3 / 6 months) or the projected year (this year). Ignores the dashboard time picker.",
+      "title": "Cost (This month)",
+      "description": "Cost from the 1st of this month until now, and projected for the whole month: energy × \"Price per kWh\", minus \"Discount (%)\", in the selected Currency. Ignores the dashboard time picker. Prometheus must keep at least 35 days of data.",
       "datasource": {
         "type": "prometheus",
         "uid": "${DS_PROMETHEUS}"
@@ -1279,8 +1278,8 @@
             "uid": "${DS_PROMETHEUS}"
           },
           "refId": "Projected_ILS",
-          "expr": "(sum(avg_over_time(nut_real_power_watts{ups=~\"${ups:pipe}\"}[$__range])) * ${period_hours} / 1000 * $kwh_price * (1 - ($discount_pct + 0) / 100)) and on() (vector($currency) == 1)",
-          "legendFormat": "${period_label}",
+          "expr": "(sum(avg_over_time(nut_real_power_watts{ups=~\"${ups:pipe}\"}[$__range])) * 24 * scalar(days_in_month()) / 1000 * $kwh_price * (1 - ($discount_pct + 0) / 100)) and on() (vector($currency) == 1)",
+          "legendFormat": "Projected month",
           "instant": true,
           "range": false
         },
@@ -1301,8 +1300,8 @@
             "uid": "${DS_PROMETHEUS}"
           },
           "refId": "Projected_USD",
-          "expr": "(sum(avg_over_time(nut_real_power_watts{ups=~\"${ups:pipe}\"}[$__range])) * ${period_hours} / 1000 * $kwh_price * (1 - ($discount_pct + 0) / 100)) and on() (vector($currency) == 2)",
-          "legendFormat": "${period_label}",
+          "expr": "(sum(avg_over_time(nut_real_power_watts{ups=~\"${ups:pipe}\"}[$__range])) * 24 * scalar(days_in_month()) / 1000 * $kwh_price * (1 - ($discount_pct + 0) / 100)) and on() (vector($currency) == 2)",
+          "legendFormat": "Projected month",
           "instant": true,
           "range": false
         },
@@ -1323,16 +1322,15 @@
             "uid": "${DS_PROMETHEUS}"
           },
           "refId": "Projected_EUR",
-          "expr": "(sum(avg_over_time(nut_real_power_watts{ups=~\"${ups:pipe}\"}[$__range])) * ${period_hours} / 1000 * $kwh_price * (1 - ($discount_pct + 0) / 100)) and on() (vector($currency) == 3)",
-          "legendFormat": "${period_label}",
+          "expr": "(sum(avg_over_time(nut_real_power_watts{ups=~\"${ups:pipe}\"}[$__range])) * 24 * scalar(days_in_month()) / 1000 * $kwh_price * (1 - ($discount_pct + 0) / 100)) and on() (vector($currency) == 3)",
+          "legendFormat": "Projected month",
           "instant": true,
           "range": false
         }
       ],
       "pluginVersion": "13.2.2",
-      "timeFrom": "$period_from",
-      "hideTimeOverride": true,
-      "timeShift": "$period_shift"
+      "timeFrom": "now/M",
+      "hideTimeOverride": true
     },
     {
       "id": 7,
@@ -2055,125 +2053,6 @@
         "allowCustomValue": true,
         "hide": 0,
         "skipUrlSync": false
-      },
-      {
-        "name": "cost_period",
-        "label": "Cost period",
-        "type": "custom",
-        "hide": 0,
-        "multi": false,
-        "includeAll": false,
-        "allowCustomValue": false,
-        "skipUrlSync": false,
-        "description": "Period for the Energy and Cost panels: This month, Last month, Last 3 months, Last 6 months (rolling) or This year. Ignores the dashboard time picker.",
-        "query": "This month : now/M|0s|24 * scalar(days_in_month())|Projected month,Last month : now/M|1M/M|24 * scalar(days_in_month())|Whole month,Last 3 months : 3M|0s|24 * 30.44|Monthly average,Last 6 months : 6M|0s|24 * 30.44|Monthly average,This year : now/y|0s|24 * (365 + scalar(year() % 4 == bool 0))|Projected year",
-        "current": {
-          "text": "This month",
-          "value": "now/M|0s|24 * scalar(days_in_month())|Projected month"
-        },
-        "options": [
-          {
-            "text": "This month",
-            "value": "now/M|0s|24 * scalar(days_in_month())|Projected month",
-            "selected": true
-          },
-          {
-            "text": "Last month",
-            "value": "now/M|1M/M|24 * scalar(days_in_month())|Whole month",
-            "selected": false
-          },
-          {
-            "text": "Last 3 months",
-            "value": "3M|0s|24 * 30.44|Monthly average",
-            "selected": false
-          },
-          {
-            "text": "Last 6 months",
-            "value": "6M|0s|24 * 30.44|Monthly average",
-            "selected": false
-          },
-          {
-            "text": "This year",
-            "value": "now/y|0s|24 * (365 + scalar(year() % 4 == bool 0))|Projected year",
-            "selected": false
-          }
-        ]
-      },
-      {
-        "name": "period_from",
-        "type": "query",
-        "hide": 2,
-        "datasource": {
-          "type": "prometheus",
-          "uid": "${DS_PROMETHEUS}"
-        },
-        "refresh": 1,
-        "regex": "/v=\"([^|\"]*)/",
-        "query": {
-          "query": "query_result(label_replace(vector(1), \"v\", \"$cost_period\", \"\", \"\"))",
-          "refId": "V"
-        },
-        "definition": "query_result(label_replace(vector(1), \"v\", \"$cost_period\", \"\", \"\"))",
-        "current": {},
-        "options": [],
-        "skipUrlSync": true
-      },
-      {
-        "name": "period_shift",
-        "type": "query",
-        "hide": 2,
-        "datasource": {
-          "type": "prometheus",
-          "uid": "${DS_PROMETHEUS}"
-        },
-        "refresh": 1,
-        "regex": "/v=\"[^|]*\\|([^|\"]*)/",
-        "query": {
-          "query": "query_result(label_replace(vector(1), \"v\", \"$cost_period\", \"\", \"\"))",
-          "refId": "V"
-        },
-        "definition": "query_result(label_replace(vector(1), \"v\", \"$cost_period\", \"\", \"\"))",
-        "current": {},
-        "options": [],
-        "skipUrlSync": true
-      },
-      {
-        "name": "period_hours",
-        "type": "query",
-        "hide": 2,
-        "datasource": {
-          "type": "prometheus",
-          "uid": "${DS_PROMETHEUS}"
-        },
-        "refresh": 1,
-        "regex": "/v=\"[^|]*\\|[^|]*\\|([^|\"]*)/",
-        "query": {
-          "query": "query_result(label_replace(vector(1), \"v\", \"$cost_period\", \"\", \"\"))",
-          "refId": "V"
-        },
-        "definition": "query_result(label_replace(vector(1), \"v\", \"$cost_period\", \"\", \"\"))",
-        "current": {},
-        "options": [],
-        "skipUrlSync": true
-      },
-      {
-        "name": "period_label",
-        "type": "query",
-        "hide": 2,
-        "datasource": {
-          "type": "prometheus",
-          "uid": "${DS_PROMETHEUS}"
-        },
-        "refresh": 1,
-        "regex": "/v=\"[^|]*\\|[^|]*\\|[^|]*\\|([^|\"]*)/",
-        "query": {
-          "query": "query_result(label_replace(vector(1), \"v\", \"$cost_period\", \"\", \"\"))",
-          "refId": "V"
-        },
-        "definition": "query_result(label_replace(vector(1), \"v\", \"$cost_period\", \"\", \"\"))",
-        "current": {},
-        "options": [],
-        "skipUrlSync": true
       },
       {
         "name": "currency",
