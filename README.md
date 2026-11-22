@@ -5,11 +5,11 @@
 [![CI](https://github.com/ShlomiD83/nut-exporter/actions/workflows/ci.yml/badge.svg)](https://github.com/ShlomiD83/nut-exporter/actions/workflows/ci.yml)
 [![Docker pulls](https://img.shields.io/docker/pulls/romekd/prometheus-nut-exporter?label=Docker%20Hub)](https://hub.docker.com/r/romekd/prometheus-nut-exporter)
 
-**📊 Grafana dashboards** (identical except for the cost currency): [₪ ILS](https://github.com/ShlomiD83/nut-exporter/blob/main/dashboards/nut-exporter-charging-status-ils.json) ([download](https://raw.githubusercontent.com/ShlomiD83/nut-exporter/main/dashboards/nut-exporter-charging-status-ils.json)) · [$ USD](https://github.com/ShlomiD83/nut-exporter/blob/main/dashboards/nut-exporter-charging-status-usd.json) ([download](https://raw.githubusercontent.com/ShlomiD83/nut-exporter/main/dashboards/nut-exporter-charging-status-usd.json)) · [€ EUR](https://github.com/ShlomiD83/nut-exporter/blob/main/dashboards/nut-exporter-charging-status-eur.json) ([download](https://raw.githubusercontent.com/ShlomiD83/nut-exporter/main/dashboards/nut-exporter-charging-status-eur.json)). Import one in Grafana via Dashboards → New → Import, then pick your Prometheus data source.
+**📊 Grafana dashboard:** [Charging Status dashboard](https://github.com/ShlomiD83/nut-exporter/blob/main/dashboards/nut-exporter-charging-status.json) ([download JSON](https://raw.githubusercontent.com/ShlomiD83/nut-exporter/main/dashboards/nut-exporter-charging-status.json)). Import it in Grafana via Dashboards → New → Import, then pick your Prometheus data source. The cost can be shown in ₪, $ or € (Currency setting on the dashboard).
 
 > **⚠️ IMPORTANT – Grafana plugin required**
 >
-> The dashboards show UPS runtime as `mm:ss` using the **Dynamic Text** panel plugin. Grafana must have it installed, or the runtime panel will not render. Set this environment variable on the **Grafana** container:
+> The dashboard shows UPS runtime as `mm:ss` using the **Dynamic Text** panel plugin. Grafana must have it installed, or the runtime panel will not render. Set this environment variable on the **Grafana** container:
 >
 > ```
 > GF_PLUGINS_PREINSTALL=marcusolsson-dynamictext-panel
@@ -32,9 +32,7 @@ Differences from upstream:
 
 Configuration, metrics and Prometheus setup are compatible with upstream (the watcher only adds metrics) and documented below.
 
-![Charging Status dashboard](https://raw.githubusercontent.com/ShlomiD83/nut-exporter/main/docs/screenshots/dashboard-ils.png)
-
-Screenshots (demo data): [₪ ILS](https://github.com/ShlomiD83/nut-exporter/blob/main/docs/screenshots/dashboard-ils.png) · [$ USD](https://github.com/ShlomiD83/nut-exporter/blob/main/docs/screenshots/dashboard-usd.png) · [€ EUR](https://github.com/ShlomiD83/nut-exporter/blob/main/docs/screenshots/dashboard-eur.png)
+![Charging Status dashboard](https://raw.githubusercontent.com/ShlomiD83/nut-exporter/main/docs/screenshots/dashboard.png)
 
 A Prometheus/OpenMetrics exporter for uninterruptable power supplies (UPSes) using Network UPS Tools (NUT).
 
@@ -129,7 +127,7 @@ resources:
 
 ### Grafana
 
-Dashboards (identical except for the cost currency): [₪ ILS](https://github.com/ShlomiD83/nut-exporter/blob/main/dashboards/nut-exporter-charging-status-ils.json) ([download](https://raw.githubusercontent.com/ShlomiD83/nut-exporter/main/dashboards/nut-exporter-charging-status-ils.json)) · [$ USD](https://github.com/ShlomiD83/nut-exporter/blob/main/dashboards/nut-exporter-charging-status-usd.json) ([download](https://raw.githubusercontent.com/ShlomiD83/nut-exporter/main/dashboards/nut-exporter-charging-status-usd.json)) · [€ EUR](https://github.com/ShlomiD83/nut-exporter/blob/main/dashboards/nut-exporter-charging-status-eur.json) ([download](https://raw.githubusercontent.com/ShlomiD83/nut-exporter/main/dashboards/nut-exporter-charging-status-eur.json)). Import one in Grafana (Dashboards → New → Import) and pick your Prometheus data source; importing the same file again updates it in place. It shows UPS status (including a *Charging* state when online below 100%), runtime as `mm:ss`, load, battery charge, input/output voltage, frequency and beeper status, power drawn, an outage timeline with outage count and time on battery, and energy and cost for this or last month.
+Dashboard: [`dashboards/nut-exporter-charging-status.json`](https://github.com/ShlomiD83/nut-exporter/blob/main/dashboards/nut-exporter-charging-status.json) ([download JSON](https://raw.githubusercontent.com/ShlomiD83/nut-exporter/main/dashboards/nut-exporter-charging-status.json)). Import it in Grafana (Dashboards → New → Import) and pick your Prometheus data source; importing it again updates it in place. The screenshot above uses demo data. It shows UPS status (including a *Charging* state when online below 100%), runtime as `mm:ss`, load, battery charge, input/output voltage, frequency and beeper status, power drawn, an outage timeline with outage count and time on battery, and energy and cost for this or last month.
 
 The original upstream dashboard is [14371](https://grafana.com/grafana/dashboards/14371).
 
@@ -163,16 +161,15 @@ If you add the variable to an existing Grafana container, recreate the container
 
 - **Cost period**: *This month* (1st of the month until now) or *Last month* (the whole previous month), for the *Energy* and *Cost* panels. They ignore the dashboard time picker.
 
-- **Price per kWh** (default `0.6352` ₪ / `0.17` $ / `0.30` €): your electricity tariff, used by the *Cost* panel.
-- **Discount (%)** (default `7` in the ₪ dashboard, `0` in the others): subtracted from the cost. Leave it empty or `0` for no discount.
+- **Currency** (default ₪): the currency symbol for the *Cost* panel: ₪, $ or €.
+- **Price per kWh** (default `0.6352`): your electricity tariff in the selected currency, used by the *Cost* panel. Switching the currency changes only the symbol, so set the price to match.
+- **Discount (%)** (default `7`): subtracted from the cost. Leave it empty or `0` for no discount.
 
 To keep your values, save the dashboard with **Update default variable values** ticked.
 
 The *Power*, *Energy* and *Cost* panels need a UPS that reports `ups.realpower`; the outage panels work with any UPS (`ups.status`).
 
 **Catching short power blips:** Prometheus only scrapes every 15–60 s, so an outage of a few seconds can fall between two scrapes. Set `WATCH_TARGET` on the exporter (see below) and it checks NUT every 2 s on its own; the *Outages* and *Time on battery* panels and the red *On battery* markers on the graphs then include even short blips. The *Watcher* card shows **OK** while it works, **Failing** if it can't reach NUT, and **Off** when `WATCH_TARGET` isn't set.
-
-The ₪ dashboard is the source; `node manage/make-currency-dashboards.js` regenerates the $ and € ones from it.
 
 ## Configuration
 

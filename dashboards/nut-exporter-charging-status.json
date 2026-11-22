@@ -1148,7 +1148,7 @@
       "id": 26,
       "type": "stat",
       "title": "Cost (${cost_period:text})",
-      "description": "Cost for the month chosen with \"Cost period\" (this month so far, or all of last month), and projected for a full month: energy × \"Price per kWh\", minus \"Discount (%)\", in €. Ignores the dashboard time picker.",
+      "description": "Cost for the month chosen with \"Cost period\" (this month so far, or all of last month), and projected for a full month: energy × \"Price per kWh\", minus \"Discount (%)\", shown in the selected Currency. Ignores the dashboard time picker.",
       "datasource": {
         "type": "prometheus",
         "uid": "${DS_PROMETHEUS}"
@@ -1161,14 +1161,87 @@
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "currencyEUR",
+          "unit": "none",
           "decimals": 2,
           "color": {
             "mode": "fixed",
             "fixedColor": "dark-green"
           }
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byFrameRefID",
+              "options": "Total_ILS"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "currencyILS"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byFrameRefID",
+              "options": "Projected_ILS"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "currencyILS"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byFrameRefID",
+              "options": "Total_USD"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "currencyUSD"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byFrameRefID",
+              "options": "Projected_USD"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "currencyUSD"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byFrameRefID",
+              "options": "Total_EUR"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "currencyEUR"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byFrameRefID",
+              "options": "Projected_EUR"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "currencyEUR"
+              }
+            ]
+          }
+        ]
       },
       "options": {
         "colorMode": "value",
@@ -1194,8 +1267,8 @@
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
           },
-          "refId": "A",
-          "expr": "sum(sum_over_time(nut_real_power_watts{ups=~\"${ups:pipe}\"}[$__range:1m])) * 60 / 3600000 * $kwh_price * (1 - ($discount_pct + 0) / 100)",
+          "refId": "Total_ILS",
+          "expr": "(sum(sum_over_time(nut_real_power_watts{ups=~\"${ups:pipe}\"}[$__range:1m])) * 60 / 3600000 * $kwh_price * (1 - ($discount_pct + 0) / 100)) and on() (vector($currency) == 1)",
           "legendFormat": "Total",
           "instant": true,
           "range": false
@@ -1205,8 +1278,52 @@
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
           },
-          "refId": "B",
-          "expr": "sum(avg_over_time(nut_real_power_watts{ups=~\"${ups:pipe}\"}[$__range])) * 24 * 30 / 1000 * $kwh_price * (1 - ($discount_pct + 0) / 100)",
+          "refId": "Projected_ILS",
+          "expr": "(sum(avg_over_time(nut_real_power_watts{ups=~\"${ups:pipe}\"}[$__range])) * 24 * 30 / 1000 * $kwh_price * (1 - ($discount_pct + 0) / 100)) and on() (vector($currency) == 1)",
+          "legendFormat": "Projected month",
+          "instant": true,
+          "range": false
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "refId": "Total_USD",
+          "expr": "(sum(sum_over_time(nut_real_power_watts{ups=~\"${ups:pipe}\"}[$__range:1m])) * 60 / 3600000 * $kwh_price * (1 - ($discount_pct + 0) / 100)) and on() (vector($currency) == 2)",
+          "legendFormat": "Total",
+          "instant": true,
+          "range": false
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "refId": "Projected_USD",
+          "expr": "(sum(avg_over_time(nut_real_power_watts{ups=~\"${ups:pipe}\"}[$__range])) * 24 * 30 / 1000 * $kwh_price * (1 - ($discount_pct + 0) / 100)) and on() (vector($currency) == 2)",
+          "legendFormat": "Projected month",
+          "instant": true,
+          "range": false
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "refId": "Total_EUR",
+          "expr": "(sum(sum_over_time(nut_real_power_watts{ups=~\"${ups:pipe}\"}[$__range:1m])) * 60 / 3600000 * $kwh_price * (1 - ($discount_pct + 0) / 100)) and on() (vector($currency) == 3)",
+          "legendFormat": "Total",
+          "instant": true,
+          "range": false
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "refId": "Projected_EUR",
+          "expr": "(sum(avg_over_time(nut_real_power_watts{ups=~\"${ups:pipe}\"}[$__range])) * 24 * 30 / 1000 * $kwh_price * (1 - ($discount_pct + 0) / 100)) and on() (vector($currency) == 3)",
           "legendFormat": "Projected month",
           "instant": true,
           "range": false
@@ -1968,20 +2085,53 @@
         "skipUrlSync": false
       },
       {
+        "name": "currency",
+        "label": "Currency",
+        "description": "Currency symbol for the Cost panel. Set Price per kWh in the same currency.",
+        "type": "custom",
+        "query": "₪ : 1,$ : 2,€ : 3",
+        "current": {
+          "text": "₪",
+          "value": "1"
+        },
+        "options": [
+          {
+            "text": "₪",
+            "value": "1",
+            "selected": true
+          },
+          {
+            "text": "$",
+            "value": "2",
+            "selected": false
+          },
+          {
+            "text": "€",
+            "value": "3",
+            "selected": false
+          }
+        ],
+        "multi": false,
+        "includeAll": false,
+        "allowCustomValue": false,
+        "hide": 0,
+        "skipUrlSync": false
+      },
+      {
         "name": "kwh_price",
         "label": "Price per kWh",
         "description": "Your electricity price per kWh, used by the Cost panel.",
         "type": "textbox",
-        "query": "0.30",
+        "query": "0.6352",
         "current": {
-          "text": "0.30",
-          "value": "0.30"
+          "text": "0.6352",
+          "value": "0.6352"
         },
         "options": [
           {
             "selected": true,
-            "text": "0.30",
-            "value": "0.30"
+            "text": "0.6352",
+            "value": "0.6352"
           }
         ],
         "hide": 0,
@@ -1992,16 +2142,16 @@
         "label": "Discount (%)",
         "description": "Discount subtracted from the cost, in percent. Leave empty or 0 for no discount.",
         "type": "textbox",
-        "query": "0",
+        "query": "7",
         "current": {
-          "text": "0",
-          "value": "0"
+          "text": "7",
+          "value": "7"
         },
         "options": [
           {
             "selected": true,
-            "text": "0",
-            "value": "0"
+            "text": "7",
+            "value": "7"
           }
         ],
         "hide": 0,
@@ -2029,7 +2179,7 @@
     "hidden": false
   },
   "timezone": "browser",
-  "title": "Prometheus NUT Exporter - Charging Status (€)",
-  "uid": "nut-exporter-charging-eur",
+  "title": "Prometheus NUT Exporter - Charging Status",
+  "uid": "nut-exporter-charging",
   "version": 1
 }
