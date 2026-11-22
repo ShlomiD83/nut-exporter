@@ -1958,16 +1958,16 @@
         "label": "Price per kWh",
         "description": "Your electricity price per kWh, used by the Cost panel.",
         "type": "textbox",
-        "query": "0.64",
+        "query": "0.6352",
         "current": {
-          "text": "0.64",
-          "value": "0.64"
+          "text": "0.6352",
+          "value": "0.6352"
         },
         "options": [
           {
             "selected": true,
-            "text": "0.64",
-            "value": "0.64"
+            "text": "0.6352",
+            "value": "0.6352"
           }
         ],
         "hide": 0,

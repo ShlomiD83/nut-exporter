@@ -161,7 +161,7 @@ If you add the variable to an existing Grafana container, recreate the container
 
 - **Cost period**: *This month* (1st of the month until now) or *Last month* (the whole previous month), for the *Energy* and *Cost* panels. They ignore the dashboard time picker.
 
-- **Price per kWh** (default `0.64` ₪ / `0.17` $ / `0.30` €): your electricity tariff, used by the *Cost* panel.
+- **Price per kWh** (default `0.6352` ₪ / `0.17` $ / `0.30` €): your electricity tariff, used by the *Cost* panel.
 - **Discount (%)** (default `7` in the ₪ dashboard, `0` in the others): subtracted from the cost.
 - **UPS capacity (W)** (default `900`, an Eaton 5E 1500i): the UPS's real-power rating, used by *Load vs capacity*.
 
