@@ -138,7 +138,7 @@ async fn endpoint_metrics(config: &Config, query: Option<&str>, accept: Option<&
 
     // Generate OpenMetrics output (plus background watcher counters, if this target is watched)
     let watched = watcher::snapshot(&target);
-    let content = build_openmetrics_content(&upses, &nut_version, &watched);
+    let content = build_openmetrics_content(&upses, &nut_version, watched.as_ref());
 
     // Set content type
     let content_type = match accept {

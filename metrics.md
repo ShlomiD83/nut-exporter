@@ -7,6 +7,7 @@
 | `nut_ups_info` |  |  | Metadata about the UPS. |
 | `nut_info` |  |  | Metadata about the NUT server. (Deprecated, use nut_server_info instead.) |
 | `nut_ups_status` | `ups.status` |  | UPS status. Check for a specific status with the "status" label. |
+| `nut_watcher_up` |  |  | 1 if the background watcher's last poll of this NUT server succeeded, 0 if it failed (needs WATCH_TARGET). |
 | `nut_on_battery_events` | `ups.status` |  | Number of switches to battery seen by the background watcher (polls every 2 s; needs WATCH_TARGET). |
 | `nut_on_battery_seconds` | `ups.status` | `seconds` | Total time on battery seen by the background watcher (needs WATCH_TARGET). |
 | `nut_last_on_battery_timestamp_seconds` | `ups.status` | `seconds` | Unix time of the last switch to battery seen by the background watcher (needs WATCH_TARGET). |

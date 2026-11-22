@@ -2,10 +2,10 @@ use std::fmt::Write as _;
 use std::collections::{HashMap, HashSet};
 
 use crate::meta::APP_VERSION;
-use crate::metrics::{EXPORTER_INFO_METRIC, LAST_ON_BATTERY_METRIC, Metric, METRIC_NAMES, METRICS, OLD_SERVER_INFO_METRIC, ON_BATTERY_EVENTS_METRIC, ON_BATTERY_SECONDS_METRIC, SERVER_INFO_METRIC, UPS_DESCRIPTION_PSEUDOVAR, UPS_INFO_METRIC, UPS_STATUS_ELEMENTS, UPS_STATUS_METRIC, UpsVarMap, VAR_METRICS, VarMap, VarTransform};
-use crate::watcher::UpsSnapshot;
+use crate::metrics::{EXPORTER_INFO_METRIC, LAST_ON_BATTERY_METRIC, Metric, METRIC_NAMES, METRICS, OLD_SERVER_INFO_METRIC, ON_BATTERY_EVENTS_METRIC, ON_BATTERY_SECONDS_METRIC, SERVER_INFO_METRIC, UPS_DESCRIPTION_PSEUDOVAR, UPS_INFO_METRIC, UPS_STATUS_ELEMENTS, UPS_STATUS_METRIC, UpsVarMap, VAR_METRICS, VarMap, VarTransform, WATCHER_UP_METRIC};
+use crate::watcher::WatchSnapshot;
 
-pub fn build_openmetrics_content(upses: &UpsVarMap, nut_version: &str, watched: &[UpsSnapshot]) -> String {
+pub fn build_openmetrics_content(upses: &UpsVarMap, nut_version: &str, watched: Option<&WatchSnapshot>) -> String {
     // Use vec for stable ordering of metrics within a metric family
     let mut metric_lines: HashMap<String, Vec<String>> = METRICS.keys().map(|m| ((*m).to_owned(), Vec::new())).collect();
 
@@ -32,7 +32,12 @@ pub fn build_openmetrics_content(upses: &UpsVarMap, nut_version: &str, watched: 
     }
 
     // Background watcher counters (counter samples carry the "_total" suffix)
-    for snapshot in watched {
+    if let Some(watch) = watched {
+        metric_lines.get_mut(WATCHER_UP_METRIC.metric).unwrap()
+            .push(format!("{} {}
+", WATCHER_UP_METRIC.metric, u8::from(watch.up)));
+    }
+    for snapshot in watched.map_or(&[][..], |w| &w.upses[..]) {
         let ups = escape_om(&snapshot.ups);
         metric_lines.get_mut(ON_BATTERY_EVENTS_METRIC.metric).unwrap()
             .push(format!("{}_total{{ups=\"{}\"}} {}\n", ON_BATTERY_EVENTS_METRIC.metric, ups, snapshot.events));

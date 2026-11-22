@@ -3,6 +3,7 @@
 # A mock backend for the NUT server.
 # Linted with flake8.
 
+import os
 import socket
 import sys
 
@@ -176,13 +177,23 @@ def handleRequest(line, client):
         sendText(DATA_UPS_LIST)
     elif numLineParts == 3 and lowerLine.startswith("list var"):
         if lineParts[2] == UPS_EXPECTED:
-            sendText(DATA_VAR_LIST)
+            sendText(varList())
         else:
             sendText("ERR UPS not found\n")
     elif numLineParts == 1 and lowerLine.startswith("logout"):
         sendText(DATA_VER)
     else:
         sendText("ERR Unknown command\n")
+
+
+def varList():
+    # Optionally override ups.status from a file (lets tests simulate power outages)
+    statusFile = os.environ.get("MOCK_STATUS_FILE")
+    if not statusFile or not os.path.isfile(statusFile):
+        return DATA_VAR_LIST
+    with open(statusFile) as file:
+        status = file.read().strip()
+    return DATA_VAR_LIST.replace('ups.status "OL CHRG"', f'ups.status "{status}"')
 
 
 def log(message, client=None, error=False):

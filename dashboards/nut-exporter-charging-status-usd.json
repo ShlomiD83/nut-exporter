@@ -745,7 +745,7 @@
       },
       "gridPos": {
         "h": 5,
-        "w": 16,
+        "w": 13,
         "x": 0,
         "y": 4
       },
@@ -826,6 +826,105 @@
         }
       ],
       "pluginVersion": "13.2.2"
+    },
+    {
+      "id": 27,
+      "type": "stat",
+      "title": "Watcher",
+      "pluginVersion": "13.2.2",
+      "description": "Background outage watcher (WATCH_TARGET on the exporter): OK = polling NUT every 2 s, Failing = cannot reach NUT, Off = not enabled (short outages may be missed).",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 3,
+        "x": 13,
+        "y": 4
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "value": null,
+                "color": "red"
+              },
+              {
+                "value": 1,
+                "color": "dark-green"
+              }
+            ]
+          },
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "0": {
+                  "text": "Failing",
+                  "color": "red",
+                  "index": 0
+                },
+                "1": {
+                  "text": "OK",
+                  "color": "dark-green",
+                  "index": 1
+                }
+              }
+            },
+            {
+              "type": "special",
+              "options": {
+                "match": "null",
+                "result": {
+                  "text": "Off",
+                  "color": "text",
+                  "index": 2
+                }
+              }
+            }
+          ],
+          "noValue": "Off",
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "text": {},
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "refId": "A",
+          "expr": "min(nut_watcher_up)",
+          "legendFormat": "watcher",
+          "instant": true,
+          "range": false
+        }
+      ]
     },
     {
       "id": 23,

@@ -170,7 +170,7 @@ To keep your values, save the dashboard with **Update default variable values** 
 
 The *Power*, *Energy* and *Cost* panels need a UPS that reports `ups.realpower`; the outage panels work with any UPS (`ups.status`).
 
-**Catching short power blips:** Prometheus only scrapes every 15–60 s, so an outage of a few seconds can fall between two scrapes. Set `WATCH_TARGET` on the exporter (see below) and it checks NUT every 2 s on its own; the *Outages* and *Time on battery* panels and the red *On battery* markers on the graphs then include even short blips.
+**Catching short power blips:** Prometheus only scrapes every 15–60 s, so an outage of a few seconds can fall between two scrapes. Set `WATCH_TARGET` on the exporter (see below) and it checks NUT every 2 s on its own; the *Outages* and *Time on battery* panels and the red *On battery* markers on the graphs then include even short blips. The *Watcher* card shows **OK** while it works, **Failing** if it can't reach NUT, and **Off** when `WATCH_TARGET` isn't set.
 
 The ₪ dashboard is the source; `node manage/make-currency-dashboards.js` regenerates the $ and € ones from it.
 
@@ -186,7 +186,7 @@ Use `latest` for the newest build, or a date tag (e.g. `2026-11-18`) to pin a sp
 - `HTTP_ADDRESS` (defaults to `::`): The HTTP server will listen on this IP. Set to `127.0.0.1` or `::1` to only allow local access.
 - `HTTP_PORT` (defaults to `9995`): The HTTP server port.
 - `HTTP_PATH` (defaults to `nut`): The HTTP server metrics path. You may want to set it to `/metrics` on new setups to avoid extra Prometheus configuration (not changed here due to compatibility).
-- `WATCH_TARGET` (not set by default): NUT server(s) to check every 2 seconds in the background for switches to battery, e.g. `192.168.1.10:3493` (comma-separated for several). Enables the `nut_on_battery_events_total`, `nut_on_battery_seconds_total` and `nut_last_on_battery_timestamp_seconds` metrics, so short outages are counted even when they fall between Prometheus scrapes. Use the same address as the `target` in your Prometheus config.
+- `WATCH_TARGET` (not set by default): NUT server(s) to check every 2 seconds in the background for switches to battery, e.g. `192.168.1.10:3493` (comma-separated for several). Enables the `nut_watcher_up`, `nut_on_battery_events_total`, `nut_on_battery_seconds_total` and `nut_last_on_battery_timestamp_seconds` metrics, so short outages are counted even when they fall between Prometheus scrapes. Use the same address as the `target` in your Prometheus config.
 - `PRINT_METRICS_AND_EXIT` (defaults to `false`): Print a Markdown-formatted table consisting of all metrics and then immediately exit. Used mainly for generating documentation.
 
 ## Metrics
