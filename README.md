@@ -32,7 +32,9 @@ Differences from upstream:
 
 Configuration, metrics and Prometheus setup are compatible with upstream (the watcher only adds metrics) and documented below.
 
-![Charging Status dashboard](https://raw.githubusercontent.com/ShlomiD83/nut-exporter/main/docs/dashboard.png)
+![Charging Status dashboard](https://raw.githubusercontent.com/ShlomiD83/nut-exporter/main/docs/screenshots/dashboard-ils.png)
+
+Screenshots (demo data): [₪ ILS](https://github.com/ShlomiD83/nut-exporter/blob/main/docs/screenshots/dashboard-ils.png) · [$ USD](https://github.com/ShlomiD83/nut-exporter/blob/main/docs/screenshots/dashboard-usd.png) · [€ EUR](https://github.com/ShlomiD83/nut-exporter/blob/main/docs/screenshots/dashboard-eur.png)
 
 A Prometheus/OpenMetrics exporter for uninterruptable power supplies (UPSes) using Network UPS Tools (NUT).
 
@@ -127,7 +129,7 @@ resources:
 
 ### Grafana
 
-Dashboards (identical except for the cost currency): [₪ ILS](https://github.com/ShlomiD83/nut-exporter/blob/main/dashboards/nut-exporter-charging-status-ils.json) ([download](https://raw.githubusercontent.com/ShlomiD83/nut-exporter/main/dashboards/nut-exporter-charging-status-ils.json)) · [$ USD](https://github.com/ShlomiD83/nut-exporter/blob/main/dashboards/nut-exporter-charging-status-usd.json) ([download](https://raw.githubusercontent.com/ShlomiD83/nut-exporter/main/dashboards/nut-exporter-charging-status-usd.json)) · [€ EUR](https://github.com/ShlomiD83/nut-exporter/blob/main/dashboards/nut-exporter-charging-status-eur.json) ([download](https://raw.githubusercontent.com/ShlomiD83/nut-exporter/main/dashboards/nut-exporter-charging-status-eur.json)). Import one in Grafana (Dashboards → New → Import) and pick your Prometheus data source; importing the same file again updates it in place. It shows UPS status (including a *Charging* state when online below 100%), runtime as `mm:ss`, load, battery charge, input/output voltage, frequency and beeper status, power drawn, an outage timeline with outage count and time on battery, energy and cost for this or last month, and load vs capacity.
+Dashboards (identical except for the cost currency): [₪ ILS](https://github.com/ShlomiD83/nut-exporter/blob/main/dashboards/nut-exporter-charging-status-ils.json) ([download](https://raw.githubusercontent.com/ShlomiD83/nut-exporter/main/dashboards/nut-exporter-charging-status-ils.json)) · [$ USD](https://github.com/ShlomiD83/nut-exporter/blob/main/dashboards/nut-exporter-charging-status-usd.json) ([download](https://raw.githubusercontent.com/ShlomiD83/nut-exporter/main/dashboards/nut-exporter-charging-status-usd.json)) · [€ EUR](https://github.com/ShlomiD83/nut-exporter/blob/main/dashboards/nut-exporter-charging-status-eur.json) ([download](https://raw.githubusercontent.com/ShlomiD83/nut-exporter/main/dashboards/nut-exporter-charging-status-eur.json)). Import one in Grafana (Dashboards → New → Import) and pick your Prometheus data source; importing the same file again updates it in place. It shows UPS status (including a *Charging* state when online below 100%), runtime as `mm:ss`, load, battery charge, input/output voltage, frequency and beeper status, power drawn, an outage timeline with outage count and time on battery, and energy and cost for this or last month.
 
 The original upstream dashboard is [14371](https://grafana.com/grafana/dashboards/14371).
 
@@ -163,11 +165,10 @@ If you add the variable to an existing Grafana container, recreate the container
 
 - **Price per kWh** (default `0.6352` ₪ / `0.17` $ / `0.30` €): your electricity tariff, used by the *Cost* panel.
 - **Discount (%)** (default `7` in the ₪ dashboard, `0` in the others): subtracted from the cost.
-- **UPS capacity (W)** (default `900`, an Eaton 5E 1500i): the UPS's real-power rating, used by *Load vs capacity*.
 
 To keep your values, save the dashboard with **Update default variable values** ticked.
 
-The *Power*, *Energy*, *Cost* and *Load vs capacity* panels need a UPS that reports `ups.realpower`; the outage panels work with any UPS (`ups.status`).
+The *Power*, *Energy* and *Cost* panels need a UPS that reports `ups.realpower`; the outage panels work with any UPS (`ups.status`).
 
 **Catching short power blips:** Prometheus only scrapes every 15–60 s, so an outage of a few seconds can fall between two scrapes. Set `WATCH_TARGET` on the exporter (see below) and it checks NUT every 2 s on its own; the *Outages* and *Time on battery* panels and the red *On battery* markers on the graphs then include even short blips.
 

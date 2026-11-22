@@ -46,12 +46,6 @@
       "id": "state-timeline",
       "name": "State timeline",
       "version": ""
-    },
-    {
-      "type": "panel",
-      "id": "bargauge",
-      "name": "Bar gauge",
-      "version": ""
     }
   ],
   "annotations": {
@@ -986,7 +980,7 @@
       },
       "gridPos": {
         "h": 4,
-        "w": 6,
+        "w": 12,
         "x": 0,
         "y": 9
       },
@@ -1058,8 +1052,8 @@
       },
       "gridPos": {
         "h": 4,
-        "w": 6,
-        "x": 6,
+        "w": 12,
+        "x": 12,
         "y": 9
       },
       "fieldConfig": {
@@ -1119,89 +1113,6 @@
       "timeFrom": "now/M",
       "hideTimeOverride": true,
       "timeShift": "$cost_period"
-    },
-    {
-      "id": 27,
-      "type": "bargauge",
-      "title": "Load vs capacity ($ups_capacity_w W)",
-      "description": "Real power drawn as a share of the UPS's rated real-power capacity (\"UPS capacity (W)\" setting; ~900 W for an Eaton 5E 1500i).",
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
-      },
-      "gridPos": {
-        "h": 4,
-        "w": 12,
-        "x": 12,
-        "y": 9
-      },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "percentunit",
-          "decimals": 0,
-          "min": 0,
-          "max": 1,
-          "color": {
-            "mode": "thresholds"
-          },
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "value": null,
-                "color": "dark-green"
-              },
-              {
-                "value": 0.6,
-                "color": "#EAB839"
-              },
-              {
-                "value": 0.8,
-                "color": "red"
-              }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "options": {
-        "displayMode": "basic",
-        "orientation": "horizontal",
-        "showUnfilled": true,
-        "valueMode": "color",
-        "namePlacement": "auto",
-        "sizing": "auto",
-        "minVizHeight": 16,
-        "minVizWidth": 8,
-        "maxVizHeight": 300,
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "legend": {
-          "showLegend": false,
-          "displayMode": "list",
-          "placement": "bottom",
-          "calcs": []
-        }
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "refId": "A",
-          "expr": "nut_real_power_watts{ups=~\"${ups:pipe}\"} / $ups_capacity_w",
-          "legendFormat": "{{ups}}",
-          "instant": true,
-          "range": false
-        }
-      ],
-      "pluginVersion": "13.2.2"
     },
     {
       "id": 5,
@@ -1988,26 +1899,6 @@
             "selected": true,
             "text": "7",
             "value": "7"
-          }
-        ],
-        "hide": 0,
-        "skipUrlSync": false
-      },
-      {
-        "name": "ups_capacity_w",
-        "label": "UPS capacity (W)",
-        "description": "Rated real-power capacity of the UPS in watts.",
-        "type": "textbox",
-        "query": "900",
-        "current": {
-          "text": "900",
-          "value": "900"
-        },
-        "options": [
-          {
-            "selected": true,
-            "text": "900",
-            "value": "900"
           }
         ],
         "hide": 0,
