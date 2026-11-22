@@ -5,11 +5,11 @@
 [![CI](https://github.com/ShlomiD83/nut-exporter/actions/workflows/ci.yml/badge.svg)](https://github.com/ShlomiD83/nut-exporter/actions/workflows/ci.yml)
 [![Docker pulls](https://img.shields.io/docker/pulls/romekd/prometheus-nut-exporter?label=Docker%20Hub)](https://hub.docker.com/r/romekd/prometheus-nut-exporter)
 
-**📊 Grafana dashboard:** [Charging Status dashboard](https://github.com/ShlomiD83/nut-exporter/blob/main/dashboards/nut-exporter-charging-status.json) ([download JSON](https://raw.githubusercontent.com/ShlomiD83/nut-exporter/main/dashboards/nut-exporter-charging-status.json)). Import it in Grafana via Dashboards → New → Import, then pick your Prometheus data source.
+**📊 Grafana dashboards** (identical except for the cost currency): [₪ ILS](https://github.com/ShlomiD83/nut-exporter/blob/main/dashboards/nut-exporter-charging-status-ils.json) ([download](https://raw.githubusercontent.com/ShlomiD83/nut-exporter/main/dashboards/nut-exporter-charging-status-ils.json)) · [$ USD](https://github.com/ShlomiD83/nut-exporter/blob/main/dashboards/nut-exporter-charging-status-usd.json) ([download](https://raw.githubusercontent.com/ShlomiD83/nut-exporter/main/dashboards/nut-exporter-charging-status-usd.json)) · [€ EUR](https://github.com/ShlomiD83/nut-exporter/blob/main/dashboards/nut-exporter-charging-status-eur.json) ([download](https://raw.githubusercontent.com/ShlomiD83/nut-exporter/main/dashboards/nut-exporter-charging-status-eur.json)). Import one in Grafana via Dashboards → New → Import, then pick your Prometheus data source.
 
 > **⚠️ IMPORTANT – Grafana plugin required**
 >
-> The [dashboard](https://github.com/ShlomiD83/nut-exporter/blob/main/dashboards/nut-exporter-charging-status.json) shows UPS runtime as `mm:ss` using the **Dynamic Text** panel plugin. Grafana must have it installed, or the runtime panel will not render. Set this environment variable on the **Grafana** container:
+> The dashboards show UPS runtime as `mm:ss` using the **Dynamic Text** panel plugin. Grafana must have it installed, or the runtime panel will not render. Set this environment variable on the **Grafana** container:
 >
 > ```
 > GF_PLUGINS_PREINSTALL=marcusolsson-dynamictext-panel
@@ -23,12 +23,14 @@ Differences from upstream:
 
 - Updated to current dependencies (hyper 1.x via hyper-util, tokio 1.5x, env_logger 0.11); unused `chrono`/`url` dependencies removed.
 - HTTP server serves both HTTP/1.1 and HTTP/2.
+- Optional background watcher (`WATCH_TARGET`) that checks NUT every 2 s and counts switches to battery, so even a few-second power blip shows up.
+- NUT queries time out (5 s connect, 10 s exchange) instead of hanging.
 - Fully static musl binary in a `FROM scratch` image (no OS layer), running as UID/GID 5000.
 - Image tags: `latest` and a build date tag (`YYYY-MM-DD`), multi-arch for `linux/amd64` and `linux/arm64`. A new image is published only when the code, Cargo files or Dockerfile change (or on a manual CI run); README-only changes just update the Docker Hub description.
 - CI runs clippy, an integration test against a mock NUT server, and `cargo audit` (RustSec advisories) on every push and weekly.
 - Dependabot opens weekly dependency PRs; they are merged automatically once CI passes, which also publishes a new image.
 
-Configuration, metrics and Prometheus setup are unchanged from upstream and documented below.
+Configuration, metrics and Prometheus setup are compatible with upstream (the watcher only adds metrics) and documented below.
 
 ![Charging Status dashboard](https://raw.githubusercontent.com/ShlomiD83/nut-exporter/main/docs/dashboard.png)
 
@@ -56,6 +58,8 @@ services:
       # /metrics is Prometheus' default metrics_path, so no extra scrape config is needed
       HTTP_PATH: /metrics
       RUST_LOG: info
+      # Check the NUT server every 2 s so short outages are counted (same address as the Prometheus target)
+      WATCH_TARGET: nut-server:3493
     # HTTP_PORT defaults to 9995
     ports:
       - "9995:9995/tcp"
@@ -123,7 +127,7 @@ resources:
 
 ### Grafana
 
-Dashboard: [`dashboards/nut-exporter-charging-status.json`](https://github.com/ShlomiD83/nut-exporter/blob/main/dashboards/nut-exporter-charging-status.json) ([download JSON](https://raw.githubusercontent.com/ShlomiD83/nut-exporter/main/dashboards/nut-exporter-charging-status.json)). Import it in Grafana (Dashboards → New → Import) and pick your Prometheus data source. It shows UPS status (including a *Charging* state when online below 100%), runtime as `mm:ss`, load, battery charge, input/output voltage, frequency and beeper status.
+Dashboards (identical except for the cost currency): [₪ ILS](https://github.com/ShlomiD83/nut-exporter/blob/main/dashboards/nut-exporter-charging-status-ils.json) ([download](https://raw.githubusercontent.com/ShlomiD83/nut-exporter/main/dashboards/nut-exporter-charging-status-ils.json)) · [$ USD](https://github.com/ShlomiD83/nut-exporter/blob/main/dashboards/nut-exporter-charging-status-usd.json) ([download](https://raw.githubusercontent.com/ShlomiD83/nut-exporter/main/dashboards/nut-exporter-charging-status-usd.json)) · [€ EUR](https://github.com/ShlomiD83/nut-exporter/blob/main/dashboards/nut-exporter-charging-status-eur.json) ([download](https://raw.githubusercontent.com/ShlomiD83/nut-exporter/main/dashboards/nut-exporter-charging-status-eur.json)). Import one in Grafana (Dashboards → New → Import) and pick your Prometheus data source; importing the same file again updates it in place. It shows UPS status (including a *Charging* state when online below 100%), runtime as `mm:ss`, load, battery charge, input/output voltage, frequency and beeper status, power drawn, an outage timeline with outage count and time on battery, energy and cost for this or last month, and load vs capacity.
 
 The original upstream dashboard is [14371](https://grafana.com/grafana/dashboards/14371).
 
@@ -153,15 +157,21 @@ services:
 
 If you add the variable to an existing Grafana container, recreate the container (e.g. `docker compose up -d grafana`) so it picks up the change.
 
-**Dashboard settings** (text boxes at the top of the dashboard):
+**Dashboard settings** (at the top of the dashboard):
 
-- **Price per kWh** (default `0.20`): your electricity tariff, used by the *Cost* panel (shown in ₪; change the currency in the Cost panel under *Standard options → Unit*).
-- **Discount (%)** (default `7`): subtracted from the cost. Set it to `0` for no discount.
+- **Cost period**: *This month* (1st of the month until now) or *Last month* (the whole previous month), for the *Energy* and *Cost* panels. They ignore the dashboard time picker.
+
+- **Price per kWh** (default `0.64` ₪ / `0.17` $ / `0.30` €): your electricity tariff, used by the *Cost* panel.
+- **Discount (%)** (default `7` in the ₪ dashboard, `0` in the others): subtracted from the cost.
 - **UPS capacity (W)** (default `900`, an Eaton 5E 1500i): the UPS's real-power rating, used by *Load vs capacity*.
 
 To keep your values, save the dashboard with **Update default variable values** ticked.
 
 The *Power*, *Energy*, *Cost* and *Load vs capacity* panels need a UPS that reports `ups.realpower`; the outage panels work with any UPS (`ups.status`).
+
+**Catching short power blips:** Prometheus only scrapes every 15–60 s, so an outage of a few seconds can fall between two scrapes. Set `WATCH_TARGET` on the exporter (see below) and it checks NUT every 2 s on its own; the *Outages* and *Time on battery* panels and the red *On battery* markers on the graphs then include even short blips.
+
+The ₪ dashboard is the source; `node manage/make-currency-dashboards.js` regenerates the $ and € ones from it.
 
 ## Configuration
 
@@ -175,6 +185,7 @@ Use `latest` for the newest build, or a date tag (e.g. `2026-11-18`) to pin a sp
 - `HTTP_ADDRESS` (defaults to `::`): The HTTP server will listen on this IP. Set to `127.0.0.1` or `::1` to only allow local access.
 - `HTTP_PORT` (defaults to `9995`): The HTTP server port.
 - `HTTP_PATH` (defaults to `nut`): The HTTP server metrics path. You may want to set it to `/metrics` on new setups to avoid extra Prometheus configuration (not changed here due to compatibility).
+- `WATCH_TARGET` (not set by default): NUT server(s) to check every 2 seconds in the background for switches to battery, e.g. `192.168.1.10:3493` (comma-separated for several). Enables the `nut_on_battery_events_total`, `nut_on_battery_seconds_total` and `nut_last_on_battery_timestamp_seconds` metrics, so short outages are counted even when they fall between Prometheus scrapes. Use the same address as the `target` in your Prometheus config.
 - `PRINT_METRICS_AND_EXIT` (defaults to `false`): Print a Markdown-formatted table consisting of all metrics and then immediately exit. Used mainly for generating documentation.
 
 ## Metrics

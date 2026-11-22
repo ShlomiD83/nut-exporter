@@ -6,6 +6,8 @@ pub struct Config {
     pub http_port: u16,
     pub http_path: String,
     pub print_metrics_and_exit: bool,
+    /// NUT servers ("host[:port]") to poll in the background for switches to battery.
+    pub watch_targets: Vec<String>,
 }
 
 impl Config {
@@ -24,6 +26,7 @@ pub fn read_config() -> Config {
         http_port: Config::DEFAULT_HTTP_PORT,
         http_path: Config::DEFAULT_HTTP_PATH.to_owned(),
         print_metrics_and_exit: Config::DEFAULT_PRINT_METRICS_AND_EXIT,
+        watch_targets: Vec::new(),
     };
 
     if let Ok(http_address_str) = std::env::var("HTTP_ADDRESS") {
@@ -46,6 +49,9 @@ pub fn read_config() -> Config {
         if let Ok(print_metrics_and_exit) = print_metrics_and_exit_str.parse::<bool>() {
             config.print_metrics_and_exit = print_metrics_and_exit;
         }
+    }
+    if let Ok(watch_target_str) = std::env::var("WATCH_TARGET") {
+        config.watch_targets = watch_target_str.split(',').map(|t| t.trim().to_owned()).filter(|t| !t.is_empty()).collect();
     }
 
     config

@@ -19,6 +19,7 @@ use crate::common::ErrorResult;
 use crate::config::Config;
 use crate::nut_client::scrape_nut;
 use crate::openmetrics_builder::build_openmetrics_content;
+use crate::watcher;
 
 const CONTENT_TYPE_TEXT: &str = "text/plain; charset=UTF-8";
 const CONTENT_TYPE_OPENMETRICS: &str = "application/openmetrics-text; version=1.0.0; charset=UTF-8";
@@ -135,8 +136,9 @@ async fn endpoint_metrics(config: &Config, query: Option<&str>, accept: Option<&
         Err(err) => return response(StatusCode::SERVICE_UNAVAILABLE, err.to_string()),
     };
 
-    // Generate OpenMetrics output
-    let content = build_openmetrics_content(&upses, &nut_version);
+    // Generate OpenMetrics output (plus background watcher counters, if this target is watched)
+    let watched = watcher::snapshot(&target);
+    let content = build_openmetrics_content(&upses, &nut_version, &watched);
 
     // Set content type
     let content_type = match accept {
@@ -150,14 +152,17 @@ async fn endpoint_metrics(config: &Config, query: Option<&str>, accept: Option<&
 }
 
 fn parse_target(query: Option<&str>) -> ErrorResult<String> {
+    let query_args: HashMap<String, String> = form_urlencoded::parse(query.unwrap_or("").as_bytes()).into_owned().collect();
+    match query_args.get("target") {
+        Some(target_raw) => normalize_target(target_raw),
+        None => Err("Missing target.".into()),
+    }
+}
+
+/// Turn "host" or "host:port" into "host:port" (default NUT port if missing).
+pub fn normalize_target(target_raw: &str) -> ErrorResult<String> {
     // Match domain, IPv4 address or IPv6 addres, with optional port number
     static TARGET_PATTERN: LazyLock<Regex> = LazyLock::new(|| Regex::new(r#"^(?P<host>\[[^\]]+\]|[^:]+)(?::(?P<port>[0-9]+))?$"#).unwrap());
-
-    let query_args: HashMap<String, String> = form_urlencoded::parse(query.unwrap_or("").as_bytes()).into_owned().collect();
-    let target_raw = match query_args.get("target") {
-        Some(target_raw) => target_raw,
-        None => return Err("Missing target.".into()),
-    };
 
     let default_port = Config::DEFAULT_NUT_PORT.to_string();
     let target = match TARGET_PATTERN.captures(target_raw) {
@@ -169,7 +174,7 @@ fn parse_target(query: Option<&str>) -> ErrorResult<String> {
             };
             format!("{}:{}", host, port)
         },
-        None => return Err("Malformed list element for VAR list query.".into()),
+        None => return Err(format!("Malformed target \"{}\".", target_raw).into()),
     };
 
     Ok(target)

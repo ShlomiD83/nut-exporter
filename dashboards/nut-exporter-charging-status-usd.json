@@ -67,6 +67,21 @@
         "iconColor": "rgba(0, 211, 255, 1)",
         "name": "Annotations & Alerts",
         "type": "dashboard"
+      },
+      {
+        "name": "On battery",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "${DS_PROMETHEUS}"
+        },
+        "enable": true,
+        "hide": false,
+        "iconColor": "red",
+        "expr": "sum by (ups) (increase(nut_on_battery_events_total{ups=~\"${ups:pipe}\"}[2m])) > 0",
+        "step": "1m",
+        "titleFormat": "On battery",
+        "textFormat": "{{ups}} switched to battery",
+        "tagKeys": "ups"
       }
     ]
   },
@@ -822,7 +837,7 @@
       "id": 23,
       "type": "stat",
       "title": "Outages",
-      "description": "Number of switches to battery in the selected time range.",
+      "description": "Number of switches to battery in the selected time range. Counts even short blips when the exporter runs with WATCH_TARGET; otherwise only outages that last across a Prometheus scrape.",
       "datasource": {
         "type": "prometheus",
         "uid": "${DS_PROMETHEUS}"
@@ -881,7 +896,7 @@
             "uid": "${DS_PROMETHEUS}"
           },
           "refId": "A",
-          "expr": "ceil(changes(nut_ups_status{ups=~\"${ups:pipe}\", status=\"OB\"}[$__range]) / 2)",
+          "expr": "sum by (ups) (round(increase(nut_on_battery_events_total{ups=~\"${ups:pipe}\"}[$__range]))) or sum by (ups) (ceil(changes(nut_ups_status{ups=~\"${ups:pipe}\", status=\"OB\"}[$__range]) / 2))",
           "legendFormat": "{{ups}}",
           "instant": true,
           "range": false
@@ -893,7 +908,7 @@
       "id": 24,
       "type": "stat",
       "title": "Time on battery",
-      "description": "Total time spent on battery in the selected time range (1-minute resolution).",
+      "description": "Total time on battery in the selected time range. Accurate to ~2 s with WATCH_TARGET; otherwise to ~1 min and only for outages that last across a scrape.",
       "datasource": {
         "type": "prometheus",
         "uid": "${DS_PROMETHEUS}"
@@ -952,7 +967,7 @@
             "uid": "${DS_PROMETHEUS}"
           },
           "refId": "A",
-          "expr": "sum_over_time(nut_ups_status{ups=~\"${ups:pipe}\", status=\"OB\"}[$__range:1m]) * 60",
+          "expr": "sum by (ups) (increase(nut_on_battery_seconds_total{ups=~\"${ups:pipe}\"}[$__range])) or sum by (ups) (sum_over_time(nut_ups_status{ups=~\"${ups:pipe}\", status=\"OB\"}[$__range:1m]) * 60)",
           "legendFormat": "{{ups}}",
           "instant": true,
           "range": false
@@ -963,8 +978,8 @@
     {
       "id": 25,
       "type": "stat",
-      "title": "Energy",
-      "description": "Energy used by the equipment on the UPS (from ups.realpower). \"In time range\" covers the period chosen in the time picker at the top right; \"Per month\" projects the same average draw over 30 days.",
+      "title": "Energy (${cost_period:text})",
+      "description": "Energy used by the equipment on the UPS (ups.realpower) in the month chosen with \"Cost period\" (this month so far, or all of last month), and projected for a full month at the same average draw. Ignores the dashboard time picker.",
       "datasource": {
         "type": "prometheus",
         "uid": "${DS_PROMETHEUS}"
@@ -1011,7 +1026,7 @@
           },
           "refId": "A",
           "expr": "sum(sum_over_time(nut_real_power_watts{ups=~\"${ups:pipe}\"}[$__range:1m])) * 60 / 3600000",
-          "legendFormat": "In time range",
+          "legendFormat": "Total",
           "instant": true,
           "range": false
         },
@@ -1022,18 +1037,21 @@
           },
           "refId": "B",
           "expr": "sum(avg_over_time(nut_real_power_watts{ups=~\"${ups:pipe}\"}[$__range])) * 24 * 30 / 1000",
-          "legendFormat": "Per month",
+          "legendFormat": "Projected month",
           "instant": true,
           "range": false
         }
       ],
-      "pluginVersion": "13.2.2"
+      "pluginVersion": "13.2.2",
+      "timeFrom": "now/M",
+      "hideTimeOverride": true,
+      "timeShift": "$cost_period"
     },
     {
       "id": 26,
       "type": "stat",
-      "title": "Cost",
-      "description": "Energy × \"Price per kWh\", minus the \"Discount (%)\" setting, in ₪. Change the currency under Standard options → Unit.",
+      "title": "Cost (${cost_period:text})",
+      "description": "Cost for the month chosen with \"Cost period\" (this month so far, or all of last month), and projected for a full month: energy × \"Price per kWh\", minus \"Discount (%)\", in $. Ignores the dashboard time picker.",
       "datasource": {
         "type": "prometheus",
         "uid": "${DS_PROMETHEUS}"
@@ -1046,7 +1064,7 @@
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "currencyILS",
+          "unit": "currencyUSD",
           "decimals": 2,
           "color": {
             "mode": "fixed",
@@ -1081,7 +1099,7 @@
           },
           "refId": "A",
           "expr": "sum(sum_over_time(nut_real_power_watts{ups=~\"${ups:pipe}\"}[$__range:1m])) * 60 / 3600000 * $kwh_price * (1 - $discount_pct / 100)",
-          "legendFormat": "In time range",
+          "legendFormat": "Total",
           "instant": true,
           "range": false
         },
@@ -1092,12 +1110,15 @@
           },
           "refId": "B",
           "expr": "sum(avg_over_time(nut_real_power_watts{ups=~\"${ups:pipe}\"}[$__range])) * 24 * 30 / 1000 * $kwh_price * (1 - $discount_pct / 100)",
-          "legendFormat": "Per month",
+          "legendFormat": "Projected month",
           "instant": true,
           "range": false
         }
       ],
-      "pluginVersion": "13.2.2"
+      "pluginVersion": "13.2.2",
+      "timeFrom": "now/M",
+      "hideTimeOverride": true,
+      "timeShift": "$cost_period"
     },
     {
       "id": 27,
@@ -1905,20 +1926,48 @@
         "skipUrlSync": false
       },
       {
+        "name": "cost_period",
+        "label": "Cost period",
+        "description": "Month shown by the Energy and Cost panels.",
+        "type": "custom",
+        "query": "This month : 0s,Last month : 1M/M",
+        "current": {
+          "text": "This month",
+          "value": "0s"
+        },
+        "options": [
+          {
+            "text": "This month",
+            "value": "0s",
+            "selected": true
+          },
+          {
+            "text": "Last month",
+            "value": "1M/M",
+            "selected": false
+          }
+        ],
+        "multi": false,
+        "includeAll": false,
+        "allowCustomValue": false,
+        "hide": 0,
+        "skipUrlSync": false
+      },
+      {
         "name": "kwh_price",
         "label": "Price per kWh",
         "description": "Your electricity price per kWh, used by the Cost panel.",
         "type": "textbox",
-        "query": "0.20",
+        "query": "0.17",
         "current": {
-          "text": "0.20",
-          "value": "0.20"
+          "text": "0.17",
+          "value": "0.17"
         },
         "options": [
           {
             "selected": true,
-            "text": "0.20",
-            "value": "0.20"
+            "text": "0.17",
+            "value": "0.17"
           }
         ],
         "hide": 0,
@@ -1929,16 +1978,16 @@
         "label": "Discount (%)",
         "description": "Discount subtracted from the cost, in percent.",
         "type": "textbox",
-        "query": "7",
+        "query": "0",
         "current": {
-          "text": "7",
-          "value": "7"
+          "text": "0",
+          "value": "0"
         },
         "options": [
           {
             "selected": true,
-            "text": "7",
-            "value": "7"
+            "text": "0",
+            "value": "0"
           }
         ],
         "hide": 0,
@@ -1986,7 +2035,7 @@
     "hidden": false
   },
   "timezone": "browser",
-  "title": "Prometheus NUT Exporter - Charging Status",
-  "uid": "nut-exporter-charging",
+  "title": "Prometheus NUT Exporter - Charging Status ($)",
+  "uid": "nut-exporter-charging-usd",
   "version": 1
 }

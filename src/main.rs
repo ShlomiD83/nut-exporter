@@ -5,6 +5,7 @@ mod meta;
 mod metrics;
 mod nut_client;
 mod openmetrics_builder;
+mod watcher;
 
 use tokio::signal::unix::{signal, SignalKind};
 use tokio::sync::broadcast;
@@ -21,8 +22,16 @@ async fn main() {
         return;
     }
 
-    // Start server
+    // Start background watchers (optional) and server
     let (shutdown_tx, mut shutdown_rx) = broadcast::channel(1);
+    for target_raw in &config.watch_targets {
+        match http_server::normalize_target(target_raw) {
+            Ok(target) => {
+                tokio::spawn(watcher::run_watcher(target, shutdown_tx.subscribe()));
+            },
+            Err(err) => log::error!("Ignoring WATCH_TARGET entry: {}", err),
+        }
+    }
     let server_task = tokio::spawn(http_server::run_server(config, shutdown_tx.subscribe()));
 
     // Listen for shutdown signals

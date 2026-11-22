@@ -77,6 +77,34 @@ pub const UPS_STATUS_METRIC: Metric = Metric {
     var_transform: VarTransform::None,
     is_integer: true,
 };
+// Background watcher metrics (only present when the target is listed in WATCH_TARGET)
+pub const ON_BATTERY_EVENTS_METRIC: Metric = Metric {
+    metric: "nut_on_battery_events",
+    help: "Number of switches to battery seen by the background watcher (polls every 2 s; needs WATCH_TARGET).",
+    type_: "counter",
+    unit: "",
+    nut_var: "ups.status",
+    var_transform: VarTransform::None,
+    is_integer: true,
+};
+pub const ON_BATTERY_SECONDS_METRIC: Metric = Metric {
+    metric: "nut_on_battery_seconds",
+    help: "Total time on battery seen by the background watcher (needs WATCH_TARGET).",
+    type_: "counter",
+    unit: "seconds",
+    nut_var: "ups.status",
+    var_transform: VarTransform::None,
+    is_integer: false,
+};
+pub const LAST_ON_BATTERY_METRIC: Metric = Metric {
+    metric: "nut_last_on_battery_timestamp_seconds",
+    help: "Unix time of the last switch to battery seen by the background watcher (needs WATCH_TARGET).",
+    type_: "gauge",
+    unit: "seconds",
+    nut_var: "ups.status",
+    var_transform: VarTransform::None,
+    is_integer: false,
+};
 // Deprecated special metrics
 pub const OLD_SERVER_INFO_METRIC: Metric = Metric {
     metric: "nut_info",
@@ -502,6 +530,9 @@ pub static METRIC_NAMES: LazyLock<Vec<&'static str>> = LazyLock::new(|| {
     vec.push(UPS_INFO_METRIC.metric);
     vec.push(OLD_SERVER_INFO_METRIC.metric);
     vec.push(UPS_STATUS_METRIC.metric);
+    vec.push(ON_BATTERY_EVENTS_METRIC.metric);
+    vec.push(ON_BATTERY_SECONDS_METRIC.metric);
+    vec.push(LAST_ON_BATTERY_METRIC.metric);
     for metric in BASIC_METRICS.iter() {
         vec.push(metric.metric);
     }
@@ -516,6 +547,9 @@ pub static METRICS: LazyLock<HashMap<&'static str, &'static Metric>> = LazyLock:
     map.insert(UPS_INFO_METRIC.metric, &UPS_INFO_METRIC);
     map.insert(OLD_SERVER_INFO_METRIC.metric, &OLD_SERVER_INFO_METRIC);
     map.insert(UPS_STATUS_METRIC.metric, &UPS_STATUS_METRIC);
+    map.insert(ON_BATTERY_EVENTS_METRIC.metric, &ON_BATTERY_EVENTS_METRIC);
+    map.insert(ON_BATTERY_SECONDS_METRIC.metric, &ON_BATTERY_SECONDS_METRIC);
+    map.insert(LAST_ON_BATTERY_METRIC.metric, &LAST_ON_BATTERY_METRIC);
     for metric in BASIC_METRICS.iter() {
         map.insert(metric.metric, metric);
     }
@@ -545,6 +579,9 @@ pub fn print_metrics() {
     print_metric(&UPS_INFO_METRIC);
     print_metric(&OLD_SERVER_INFO_METRIC);
     print_metric(&UPS_STATUS_METRIC);
+    print_metric(&ON_BATTERY_EVENTS_METRIC);
+    print_metric(&ON_BATTERY_SECONDS_METRIC);
+    print_metric(&LAST_ON_BATTERY_METRIC);
     for metric in BASIC_METRICS.iter() {
         print_metric(metric);
     }
