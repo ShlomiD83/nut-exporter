@@ -96,6 +96,24 @@ pub const WATCHER_UP_METRIC: Metric = Metric {
     var_transform: VarTransform::None,
     is_integer: true,
 };
+pub const ENERGY_MONTH_METRIC: Metric = Metric {
+    metric: "nut_energy_month_kwh",
+    help: "Energy used per calendar month in kWh, from the background watcher's power readings (needs WATCH_TARGET and HISTORY_FILE).",
+    type_: "gauge",
+    unit: "",
+    nut_var: "ups.realpower",
+    var_transform: VarTransform::None,
+    is_integer: false,
+};
+pub const ENERGY_MONTH_SECONDS_METRIC: Metric = Metric {
+    metric: "nut_energy_month_seconds",
+    help: "Time covered by power readings per calendar month (needs WATCH_TARGET and HISTORY_FILE).",
+    type_: "gauge",
+    unit: "seconds",
+    nut_var: "ups.realpower",
+    var_transform: VarTransform::None,
+    is_integer: false,
+};
 pub const ON_BATTERY_EVENTS_METRIC: Metric = Metric {
     metric: "nut_on_battery_events",
     help: "Number of switches to battery seen by the background watcher (polls every 2 s; needs WATCH_TARGET).",
@@ -553,6 +571,8 @@ pub static METRIC_NAMES: LazyLock<Vec<&'static str>> = LazyLock::new(|| {
     vec.push(ON_BATTERY_EVENTS_METRIC.metric);
     vec.push(ON_BATTERY_SECONDS_METRIC.metric);
     vec.push(LAST_ON_BATTERY_METRIC.metric);
+    vec.push(ENERGY_MONTH_METRIC.metric);
+    vec.push(ENERGY_MONTH_SECONDS_METRIC.metric);
     for metric in BASIC_METRICS.iter() {
         vec.push(metric.metric);
     }
@@ -572,6 +592,8 @@ pub static METRICS: LazyLock<HashMap<&'static str, &'static Metric>> = LazyLock:
     map.insert(ON_BATTERY_EVENTS_METRIC.metric, &ON_BATTERY_EVENTS_METRIC);
     map.insert(ON_BATTERY_SECONDS_METRIC.metric, &ON_BATTERY_SECONDS_METRIC);
     map.insert(LAST_ON_BATTERY_METRIC.metric, &LAST_ON_BATTERY_METRIC);
+    map.insert(ENERGY_MONTH_METRIC.metric, &ENERGY_MONTH_METRIC);
+    map.insert(ENERGY_MONTH_SECONDS_METRIC.metric, &ENERGY_MONTH_SECONDS_METRIC);
     for metric in BASIC_METRICS.iter() {
         map.insert(metric.metric, metric);
     }
@@ -606,6 +628,8 @@ pub fn print_metrics() {
     print_metric(&ON_BATTERY_EVENTS_METRIC);
     print_metric(&ON_BATTERY_SECONDS_METRIC);
     print_metric(&LAST_ON_BATTERY_METRIC);
+    print_metric(&ENERGY_MONTH_METRIC);
+    print_metric(&ENERGY_MONTH_SECONDS_METRIC);
     for metric in BASIC_METRICS.iter() {
         print_metric(metric);
     }

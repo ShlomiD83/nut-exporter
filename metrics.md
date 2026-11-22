@@ -12,6 +12,8 @@
 | `nut_on_battery_events` | `ups.status` |  | Number of switches to battery seen by the background watcher (polls every 2 s; needs WATCH_TARGET). |
 | `nut_on_battery_seconds` | `ups.status` | `seconds` | Total time on battery seen by the background watcher (needs WATCH_TARGET). |
 | `nut_last_on_battery_timestamp_seconds` | `ups.status` | `seconds` | Unix time of the last switch to battery seen by the background watcher (needs WATCH_TARGET). |
+| `nut_energy_month_kwh` | `ups.realpower` |  | Energy used per calendar month in kWh, from the background watcher's power readings (needs WATCH_TARGET and HISTORY_FILE). |
+| `nut_energy_month_seconds` | `ups.realpower` | `seconds` | Time covered by power readings per calendar month (needs WATCH_TARGET and HISTORY_FILE). |
 | `nut_beeper_status` | `ups.beeper.status` |  | If the beeper is enabled. Unknown (0), enabled (1), disabled (2) or muted (3). |
 | `nut_uptime_seconds` | `device.uptime` | `seconds` | Device uptime. |
 | `nut_load` | `ups.load` |  | Load. (0-1) |

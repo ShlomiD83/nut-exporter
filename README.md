@@ -24,6 +24,7 @@ Differences from upstream:
 - Updated to current dependencies (hyper 1.x via hyper-util, tokio 1.5x, env_logger 0.11); unused `chrono`/`url` dependencies removed.
 - HTTP server serves both HTTP/1.1 and HTTP/2.
 - Optional background watcher (`WATCH_TARGET`) that checks NUT every 2 s and counts switches to battery, so even a few-second power blip shows up.
+- Optional monthly energy history (`HISTORY_FILE`): kWh per calendar month saved to a small JSON file and shown as a *Monthly history* table, independent of Prometheus retention.
 - NUT queries time out instead of hanging, always within Prometheus' scrape timeout. If the NUT server can't be reached, the exporter still answers (HTTP 200) with `nut_scrape_success 0` instead of HTTP 503, so the dashboard can show *NUT unreachable*. Use `nut_scrape_success` rather than Prometheus' `up` to alert on an unreachable NUT server.
 - Fully static musl binary in a `FROM scratch` image (no OS layer), running as UID/GID 5000.
 - Image tags: `latest` and a build date tag (`YYYY-MM-DD`), multi-arch for `linux/amd64` and `linux/arm64`. A new image is published only when the code, Cargo files or Dockerfile change (or on a manual CI run); README-only changes just update the Docker Hub description.
@@ -60,6 +61,12 @@ services:
       RUST_LOG: info
       # Check the NUT server every 2 s so short outages are counted (same address as the Prometheus target)
       WATCH_TARGET: nut-server:3493
+      # Keep a monthly energy (kWh) history in the mounted folder, with months in your time zone
+      HISTORY_FILE: /data/history.json
+      TZ: Asia/Jerusalem
+    volumes:
+      # Must be writable by UID 5000: sudo mkdir -p /path/to/nut-exporter && sudo chown 5000:5000 /path/to/nut-exporter
+      - /path/to/nut-exporter:/data
     # HTTP_PORT defaults to 9995
     ports:
       - "9995:9995/tcp"
@@ -80,7 +87,7 @@ services:
         max-file: "3"
 ```
 
-The image is a single static binary on `scratch` (no shell, no OS), so it runs fine as a non-root user with a read-only filesystem and no Linux capabilities. It needs only a few MB of memory; the limits above leave plenty of headroom.
+The image is a single static binary on `scratch` (no shell, no OS), so it runs fine as a non-root user with a read-only filesystem and no Linux capabilities; the only writable place it needs is the history folder (leave out `HISTORY_FILE`, `TZ` and `volumes` if you don't want the monthly history). It needs only a few MB of memory; the limits above leave plenty of headroom.
 
 ### Prometheus
 
@@ -127,7 +134,7 @@ resources:
 
 ### Grafana
 
-Dashboard: [`dashboards/nut-exporter-charging-status.json`](https://github.com/ShlomiD83/nut-exporter/blob/main/dashboards/nut-exporter-charging-status.json) ([download JSON](https://raw.githubusercontent.com/ShlomiD83/nut-exporter/main/dashboards/nut-exporter-charging-status.json)). Import it in Grafana (Dashboards → New → Import) and pick your Prometheus data source; importing it again updates it in place. The screenshot above uses demo data. It shows UPS status (including a *Charging* state when online below 100%), runtime as `mm:ss`, load, battery charge, input/output voltage, frequency and beeper status, power drawn, an outage timeline with outage count and time on battery, and energy and cost for the current month (total so far and projected month).
+Dashboard: [`dashboards/nut-exporter-charging-status.json`](https://github.com/ShlomiD83/nut-exporter/blob/main/dashboards/nut-exporter-charging-status.json) ([download JSON](https://raw.githubusercontent.com/ShlomiD83/nut-exporter/main/dashboards/nut-exporter-charging-status.json)). Import it in Grafana (Dashboards → New → Import) and pick your Prometheus data source; importing it again updates it in place. The screenshot above uses demo data. It shows UPS status (including a *Charging* state when online below 100%), runtime as `mm:ss`, load, battery charge, input/output voltage, frequency and beeper status, power drawn, an outage timeline with outage count and time on battery, energy and cost for the current month (total so far and projected month), and a monthly history.
 
 The original upstream dashboard is [14371](https://grafana.com/grafana/dashboards/14371).
 
@@ -167,7 +174,9 @@ To keep your values, save the dashboard with **Update default variable values** 
 
 **Prometheus retention:** the *Energy* and *Cost* panels add up the whole current month, so Prometheus must keep at least **35 days** of data (its default is 15 days). Set it on the Prometheus container, e.g. `--storage.tsdb.retention.time=35d`.
 
-The *Power*, *Energy* and *Cost* panels need a UPS that reports `ups.realpower`; the outage panels work with any UPS (`ups.status`).
+**Monthly history** (bottom right) lists energy, cost, average power and days covered per calendar month. It needs `WATCH_TARGET` and `HISTORY_FILE` on the exporter (see [Environment Variables](#environment-variables)); the cost uses the current price, discount and currency.
+
+The *Power*, *Energy*, *Cost* and *Monthly history* panels need a UPS that reports `ups.realpower`; the outage panels work with any UPS (`ups.status`).
 
 **Catching short power blips:** Prometheus only scrapes every 15–60 s, so an outage of a few seconds can fall between two scrapes. Set `WATCH_TARGET` on the exporter (see below) and it checks NUT every 2 s on its own; the *Outages* and *Time on battery* panels and the red *On battery* markers on the graphs then include even short blips. The *Watcher* card shows **OK** while it works, **Failing** if it can't reach NUT, and **Off** when `WATCH_TARGET` isn't set.
 
@@ -184,6 +193,8 @@ Use `latest` for the newest build, or a date tag (e.g. `2026-11-18`) to pin a sp
 - `HTTP_PORT` (defaults to `9995`): The HTTP server port.
 - `HTTP_PATH` (defaults to `nut`): The HTTP server metrics path. You may want to set it to `/metrics` on new setups to avoid extra Prometheus configuration (not changed here due to compatibility).
 - `WATCH_TARGET` (not set by default): NUT server(s) to check every 2 seconds in the background for switches to battery, e.g. `192.168.1.10:3493` (comma-separated for several). Enables the `nut_watcher_up`, `nut_on_battery_events_total`, `nut_on_battery_seconds_total` and `nut_last_on_battery_timestamp_seconds` metrics, so short outages are counted even when they fall between Prometheus scrapes. Use the same address as the `target` in your Prometheus config.
+- `HISTORY_FILE` (not set by default): JSON file for the monthly energy history, e.g. `/data/history.json` on a mounted, writable folder. Needs `WATCH_TARGET` and a UPS that reports `ups.realpower`. The exporter adds up kWh per calendar month from the 2-second readings, saves the file every minute and on shutdown, and exports every stored month as `nut_energy_month_kwh` / `nut_energy_month_seconds`, so the history doesn't depend on Prometheus retention. Gaps longer than 30 s (exporter or NUT down) aren't counted.
+- `TZ` (defaults to UTC): time zone for the month boundaries of the energy history, e.g. `Asia/Jerusalem` (the time zone database is built in).
 - `PRINT_METRICS_AND_EXIT` (defaults to `false`): Print a Markdown-formatted table consisting of all metrics and then immediately exit. Used mainly for generating documentation.
 
 ## Metrics

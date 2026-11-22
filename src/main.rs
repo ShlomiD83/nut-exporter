@@ -1,5 +1,6 @@
 mod common;
 mod config;
+mod history;
 mod http_server;
 mod meta;
 mod metrics;
@@ -20,6 +21,14 @@ async fn main() {
     if config.print_metrics_and_exit {
         metrics::print_metrics();
         return;
+    }
+
+    // Monthly energy history (optional; fed by the background watcher)
+    if let Some(history_file) = &config.history_file {
+        if config.watch_targets.is_empty() {
+            log::warn!("HISTORY_FILE is set but WATCH_TARGET isn't; the monthly energy history needs WATCH_TARGET.");
+        }
+        history::init(history_file);
     }
 
     // Start background watchers (optional) and server
@@ -51,6 +60,7 @@ async fn main() {
         },
     }
 
-    // Wait for server
+    // Wait for server, then write the latest energy history before exiting
     server_task.await.unwrap();
+    history::save(true);
 }

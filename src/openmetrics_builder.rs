@@ -2,7 +2,7 @@ use std::fmt::Write as _;
 use std::collections::{HashMap, HashSet};
 
 use crate::meta::APP_VERSION;
-use crate::metrics::{EXPORTER_INFO_METRIC, LAST_ON_BATTERY_METRIC, Metric, METRIC_NAMES, METRICS, OLD_SERVER_INFO_METRIC, ON_BATTERY_EVENTS_METRIC, ON_BATTERY_SECONDS_METRIC, SCRAPE_SUCCESS_METRIC, SERVER_INFO_METRIC, UPS_DESCRIPTION_PSEUDOVAR, UPS_INFO_METRIC, UPS_STATUS_ELEMENTS, UPS_STATUS_METRIC, UpsVarMap, VAR_METRICS, VarMap, VarTransform, WATCHER_UP_METRIC};
+use crate::metrics::{ENERGY_MONTH_METRIC, ENERGY_MONTH_SECONDS_METRIC, EXPORTER_INFO_METRIC, LAST_ON_BATTERY_METRIC, Metric, METRIC_NAMES, METRICS, OLD_SERVER_INFO_METRIC, ON_BATTERY_EVENTS_METRIC, ON_BATTERY_SECONDS_METRIC, SCRAPE_SUCCESS_METRIC, SERVER_INFO_METRIC, UPS_DESCRIPTION_PSEUDOVAR, UPS_INFO_METRIC, UPS_STATUS_ELEMENTS, UPS_STATUS_METRIC, UpsVarMap, VAR_METRICS, VarMap, VarTransform, WATCHER_UP_METRIC};
 use crate::watcher::WatchSnapshot;
 
 /// Build the metrics page. `scraped` is None when the NUT server couldn't be scraped; the page then
@@ -54,6 +54,17 @@ pub fn build_openmetrics_content(scraped: Option<(&UpsVarMap, &str)>, watched: O
             metric_lines.get_mut(LAST_ON_BATTERY_METRIC.metric).unwrap()
                 .push(format!("{}{{ups=\"{}\"}} {:.3}\n", LAST_ON_BATTERY_METRIC.metric, ups, last_event));
         }
+    }
+
+    // Monthly energy history (every stored month, so it survives Prometheus retention)
+    for row in watched.map_or(&[][..], |w| &w.months[..]) {
+        let labels = format!("ups=\"{}\",month=\"{}\"", escape_om(&row.ups), escape_om(&row.month));
+        metric_lines.get_mut(ENERGY_MONTH_METRIC.metric).unwrap()
+            .push(format!("{}{{{}}} {:.6}
+", ENERGY_MONTH_METRIC.metric, labels, row.energy.kwh));
+        metric_lines.get_mut(ENERGY_MONTH_SECONDS_METRIC.metric).unwrap()
+            .push(format!("{}{{{}}} {:.3}
+", ENERGY_MONTH_SECONDS_METRIC.metric, labels, row.energy.seconds));
     }
 
     // Print metric info and then all dimensions together

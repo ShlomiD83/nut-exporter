@@ -8,6 +8,8 @@ pub struct Config {
     pub print_metrics_and_exit: bool,
     /// NUT servers ("host[:port]") to poll in the background for switches to battery.
     pub watch_targets: Vec<String>,
+    /// JSON file for the monthly energy history (needs WATCH_TARGET).
+    pub history_file: Option<String>,
 }
 
 impl Config {
@@ -27,6 +29,7 @@ pub fn read_config() -> Config {
         http_path: Config::DEFAULT_HTTP_PATH.to_owned(),
         print_metrics_and_exit: Config::DEFAULT_PRINT_METRICS_AND_EXIT,
         watch_targets: Vec::new(),
+        history_file: None,
     };
 
     if let Ok(http_address_str) = std::env::var("HTTP_ADDRESS") {
@@ -52,6 +55,11 @@ pub fn read_config() -> Config {
     }
     if let Ok(watch_target_str) = std::env::var("WATCH_TARGET") {
         config.watch_targets = watch_target_str.split(',').map(|t| t.trim().to_owned()).filter(|t| !t.is_empty()).collect();
+    }
+    if let Ok(history_file) = std::env::var("HISTORY_FILE") {
+        if !history_file.trim().is_empty() {
+            config.history_file = Some(history_file.trim().to_owned());
+        }
     }
 
     config

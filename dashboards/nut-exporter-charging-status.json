@@ -46,6 +46,12 @@
       "id": "state-timeline",
       "name": "State timeline",
       "version": ""
+    },
+    {
+      "type": "panel",
+      "id": "table",
+      "name": "Table",
+      "version": ""
     }
   ],
   "annotations": {
@@ -1963,6 +1969,249 @@
           "legendFormat": "{{ups}}"
         }
       ]
+    },
+    {
+      "id": 28,
+      "type": "table",
+      "title": "Monthly history",
+      "description": "Energy and cost per calendar month, kept by the exporter (needs WATCH_TARGET and HISTORY_FILE). Cost uses the current Price per kWh, Discount and Currency. \"Days covered\" is how much of the month the exporter was measuring; the first month and any downtime show fewer days.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 28,
+        "w": 12,
+        "h": 6
+      },
+      "pluginVersion": "13.2.2",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "refId": "Energy",
+          "expr": "sum by (ups, month) (nut_energy_month_kwh{ups=~\"${ups:pipe}\"})",
+          "format": "table",
+          "instant": true,
+          "range": false,
+          "legendFormat": ""
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "refId": "Cost",
+          "expr": "sum by (ups, month) (nut_energy_month_kwh{ups=~\"${ups:pipe}\"}) * $kwh_price * (1 - ($discount_pct + 0) / 100)",
+          "format": "table",
+          "instant": true,
+          "range": false,
+          "legendFormat": ""
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "refId": "AvgPower",
+          "expr": "sum by (ups, month) (nut_energy_month_kwh{ups=~\"${ups:pipe}\"}) * 3600000 / sum by (ups, month) (nut_energy_month_seconds{ups=~\"${ups:pipe}\"})",
+          "format": "table",
+          "instant": true,
+          "range": false,
+          "legendFormat": ""
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "refId": "Days",
+          "expr": "sum by (ups, month) (nut_energy_month_seconds{ups=~\"${ups:pipe}\"}) / 86400",
+          "format": "table",
+          "instant": true,
+          "range": false,
+          "legendFormat": ""
+        }
+      ],
+      "transformations": [
+        {
+          "id": "merge",
+          "options": {}
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true
+            },
+            "indexByName": {
+              "month": 0,
+              "ups": 1,
+              "Value #Energy": 2,
+              "Value #Cost": 3,
+              "Value #AvgPower": 4,
+              "Value #Days": 5
+            },
+            "renameByName": {}
+          }
+        },
+        {
+          "id": "sortBy",
+          "options": {
+            "fields": {},
+            "sort": [
+              {
+                "field": "month",
+                "desc": true
+              }
+            ]
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          },
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "value": null,
+                "color": "text"
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "month"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Month"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "ups"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "UPS"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Value #Energy"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Energy"
+              },
+              {
+                "id": "unit",
+                "value": "kwatth"
+              },
+              {
+                "id": "decimals",
+                "value": 1
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Value #Cost"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Cost (${currency:text})"
+              },
+              {
+                "id": "unit",
+                "value": "none"
+              },
+              {
+                "id": "decimals",
+                "value": 2
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Value #AvgPower"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Avg power"
+              },
+              {
+                "id": "unit",
+                "value": "watt"
+              },
+              {
+                "id": "decimals",
+                "value": 0
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Value #Days"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Days covered"
+              },
+              {
+                "id": "unit",
+                "value": "none"
+              },
+              {
+                "id": "decimals",
+                "value": 1
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm",
+        "footer": {
+          "show": false,
+          "reducer": [
+            "sum"
+          ],
+          "fields": ""
+        },
+        "sortBy": []
+      }
     }
   ],
   "preload": false,

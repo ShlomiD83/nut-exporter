@@ -11,6 +11,7 @@ use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 use tokio::sync::broadcast::Receiver;
 use tokio::time::MissedTickBehavior;
 
+use crate::history::{self, MonthRow};
 use crate::nut_client::scrape_nut;
 
 pub const POLL_INTERVAL: Duration = Duration::from_secs(2);
@@ -44,6 +45,8 @@ struct TargetState {
 pub struct WatchSnapshot {
     pub up: bool,
     pub upses: Vec<UpsSnapshot>,
+    /// Monthly energy history for these UPSes (empty unless HISTORY_FILE is set).
+    pub months: Vec<MonthRow>,
 }
 
 // Normalized target ("host:port") -> state
@@ -68,13 +71,22 @@ pub async fn run_watcher(target: String, mut shutdown_channel: Receiver<bool>) {
                     log::info!("Watcher reconnected to NUT server {}", target);
                     failing = false;
                 }
-                let mut state = STATE.lock().unwrap();
-                let target_state = state.entry(target.clone()).or_default();
-                target_state.up = true;
-                for (ups, vars) in upses.iter() {
-                    let on_battery = vars.get("ups.status").is_some_and(|status| status.split(' ').any(|s| s == "OB"));
-                    update_state(target_state.upses.entry(ups.clone()).or_default(), ups, on_battery);
+                {
+                    let mut state = STATE.lock().unwrap();
+                    let target_state = state.entry(target.clone()).or_default();
+                    target_state.up = true;
+                    for (ups, vars) in upses.iter() {
+                        let on_battery = vars.get("ups.status").is_some_and(|status| status.split(' ').any(|s| s == "OB"));
+                        update_state(target_state.upses.entry(ups.clone()).or_default(), ups, on_battery);
+                    }
                 }
+                // Monthly energy history (only active when HISTORY_FILE is set)
+                for (ups, vars) in upses.iter() {
+                    if let Some(watts) = vars.get("ups.realpower").and_then(|value| value.parse::<f64>().ok()) {
+                        history::record(ups, watts);
+                    }
+                }
+                history::save(false);
             },
             Err(err) => {
                 // Keep the counters; mark the watcher as down and log once per failure streak
@@ -86,6 +98,9 @@ pub async fn run_watcher(target: String, mut shutdown_channel: Receiver<bool>) {
             },
         }
     }
+
+    // Don't lose the last minute of energy history on shutdown
+    history::save(true);
 }
 
 fn update_state(state: &mut UpsState, ups: &str, on_battery: bool) {
@@ -117,7 +132,8 @@ pub fn snapshot(target: &str) -> Option<WatchSnapshot> {
         last_event_unix: s.last_event_unix,
     }).collect();
     snapshots.sort_by(|a, b| a.ups.cmp(&b.ups));
-    Some(WatchSnapshot { up: target_state.up, upses: snapshots })
+    let ups_names: Vec<String> = snapshots.iter().map(|s| s.ups.clone()).collect();
+    Some(WatchSnapshot { up: target_state.up, upses: snapshots, months: history::rows(&ups_names) })
 }
 
 fn unix_now() -> f64 {
