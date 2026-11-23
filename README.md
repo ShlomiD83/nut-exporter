@@ -147,7 +147,7 @@ GF_PLUGINS_PREINSTALL=marcusolsson-dynamictext-panel
 Docker CLI:
 
 ```sh
-docker run -d -p 3000:3000 -e GF_PLUGINS_PREINSTALL=marcusolsson-dynamictext-panel grafana/grafana
+docker run -d -p 3000:3000 -e GF_PLUGINS_PREINSTALL=marcusolsson-dynamictext-panel grafana/grafana:latest-distroless-slim
 ```
 
 Docker Compose:
@@ -155,7 +155,7 @@ Docker Compose:
 ```yaml
 services:
   grafana:
-    image: grafana/grafana
+    image: grafana/grafana:latest-distroless-slim
     ports:
       - "3000:3000"
     environment:
@@ -163,6 +163,8 @@ services:
 ```
 
 If you add the variable to an existing Grafana container, recreate the container (e.g. `docker compose up -d grafana`) so it picks up the change.
+
+The examples use Grafana's **`latest-distroless-slim`** image: about 280 MB to download on arm64 instead of ~470 MB for `latest`, with no shell or OS packages. The slim image doesn't bundle the core data source plugins; Grafana downloads the ones it needs (e.g. Prometheus) from grafana.com on first start, like the Dynamic Text plugin, and keeps them in its data folder. The dashboard is tested on it (Grafana 13.3).
 
 **Dashboard settings** (at the top of the dashboard):
 
