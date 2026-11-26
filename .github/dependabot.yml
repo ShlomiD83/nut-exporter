@@ -1,11 +1,12 @@
 version: 2
-# One grouped PR per ecosystem per week; merged automatically once CI passes
-# (see .github/workflows/dependabot-automerge.yml).
+# One grouped PR per ecosystem per week. PRs are NOT merged automatically: CI runs on each one and
+# the assignee gets a GitHub notification to review and merge it (merging to main publishes a new image).
 updates:
   - package-ecosystem: cargo
     directory: /
     schedule:
       interval: weekly
+    assignees: ["ShlomiD83"]
     groups:
       cargo:
         patterns: ["*"]
@@ -13,6 +14,7 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    assignees: ["ShlomiD83"]
     groups:
       actions:
         patterns: ["*"]
@@ -20,6 +22,7 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    assignees: ["ShlomiD83"]
     groups:
       docker:
         patterns: ["*"]

@@ -14,7 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - CI integration test simulates a short outage and checks the watcher counts it.
 - HTTP/2 support (hyper-util auto connection builder).
 - `cargo audit` security check and Dependabot in CI.
-- Dependabot PRs are merged automatically once CI passes, and the new image is published.
+- Dependabot PRs are tested by CI and assigned to the maintainer for review (no auto-merge); merging publishes a new image.
 
 ### Changed
 

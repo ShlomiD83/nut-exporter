@@ -29,7 +29,7 @@ Differences from upstream:
 - Fully static musl binary in a `FROM scratch` image (no OS layer), running as UID/GID 5000.
 - Image tags: `latest` and a build date tag (`YYYY-MM-DD`), multi-arch for `linux/amd64` and `linux/arm64`. A new image is published only when the code, Cargo files or Dockerfile change (or on a manual CI run); README-only changes just update the Docker Hub description.
 - CI runs clippy, an integration test against a mock NUT server, and `cargo audit` (RustSec advisories) on every push and weekly.
-- Dependabot opens weekly dependency PRs; they are merged automatically once CI passes, which also publishes a new image.
+- Dependabot opens weekly dependency PRs (assigned to the maintainer, so GitHub sends a notification); CI tests each one, and merging it to main publishes a new image.
 
 Configuration, metrics and Prometheus setup are compatible with upstream (the watcher only adds metrics) and documented below.
 
