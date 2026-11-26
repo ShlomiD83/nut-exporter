@@ -166,7 +166,7 @@ pub fn rows(upses: &[String]) -> Vec<MonthRow> {
 
 /// "YYYY-MM" of the timestamp in the given time zone.
 fn month_key(at: Timestamp, time_zone: &TimeZone) -> String {
-    at.to_zoned(time_zone.clone()).strftime("%Y-%m").to_string()
+    at.to_zoned_datetime(time_zone.clone()).strftime("%Y-%m").to_string()
 }
 
 fn add_energy(data: &mut HistoryData, ups: &str, month: &str, kwh: f64, seconds: f64) {
