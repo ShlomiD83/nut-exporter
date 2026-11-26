@@ -59,10 +59,13 @@ jobs:
       - name: Dependency report
         if: always()
         run: |
-          echo "## Direct dependencies" >> "$GITHUB_STEP_SUMMARY"
-          echo '```' >> "$GITHUB_STEP_SUMMARY"
-          cargo tree --depth 1 >> "$GITHUB_STEP_SUMMARY"
-          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          # --color never: the summary is Markdown, terminal color codes would show up as garbage
+          {
+            echo "## Direct dependencies"
+            echo '```'
+            cargo tree --depth 1 --color never
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload lockfile
         uses: actions/upload-artifact@v7
@@ -98,7 +101,6 @@ jobs:
           IS_DEFAULT_BRANCH: ${{ github.ref == format('refs/heads/{0}', github.event.repository.default_branch) }}
         run: |
           DATE="$(date -u +%Y-%m-%d)"
-          echo "date=$DATE" >> "$GITHUB_OUTPUT"
 
           # Only files that end up in the image trigger a new image.
           # Manual runs (workflow_dispatch) always rebuild; PRs always test the build.
@@ -120,9 +122,12 @@ jobs:
             PUBLISH=true
           fi
 
-          echo "build=$IMAGE_CHANGED" >> "$GITHUB_OUTPUT"
-          echo "on_main=$ON_MAIN" >> "$GITHUB_OUTPUT"
-          echo "publish=$PUBLISH" >> "$GITHUB_OUTPUT"
+          {
+            echo "date=$DATE"
+            echo "build=$IMAGE_CHANGED"
+            echo "on_main=$ON_MAIN"
+            echo "publish=$PUBLISH"
+          } >> "$GITHUB_OUTPUT"
           {
             echo "Image inputs changed: $IMAGE_CHANGED"
             echo "Publish to Docker Hub and GHCR: $PUBLISH (tags: latest, $DATE)"
