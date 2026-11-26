@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Weekly CVE check workflow: Trivy scan of the published image and `cargo audit` of `Cargo.lock`; rebuilds and republishes when the repo already has the fix. The binary is built with cargo-auditable so scanners can see its Rust crates.
 - Monthly energy history (`HISTORY_FILE`, `TZ`): kWh per calendar month (in the configured time zone) from the watcher's readings, saved to a JSON file and exported as `nut_energy_month_kwh` / `nut_energy_month_seconds`; *Monthly history* table on the dashboard. Unit tests (`cargo test`) now run in CI.
 - Optional background watcher (`WATCH_TARGET`): checks NUT every 2 s and exposes `nut_on_battery_events_total`, `nut_on_battery_seconds_total` `nut_last_on_battery_timestamp_seconds` and `nut_watcher_up` (a Watcher card on the dashboards), so outages shorter than the Prometheus scrape interval are counted.
 - Grafana dashboard (`dashboards/nut-exporter-charging-status.json`) with a Currency setting (₪ / $ / €), power, outage timeline/count/time on battery, energy and cost for the current month (total and projected month; price and discount settings), and On battery markers.

@@ -28,7 +28,8 @@ Differences from upstream:
 - NUT queries time out instead of hanging, always within Prometheus' scrape timeout. If the NUT server can't be reached, the exporter still answers (HTTP 200) with `nut_scrape_success 0` instead of HTTP 503, so the dashboard can show *NUT unreachable*. Use `nut_scrape_success` rather than Prometheus' `up` to alert on an unreachable NUT server.
 - Fully static musl binary in a `FROM scratch` image (no OS layer), running as UID/GID 5000.
 - Image tags: `latest` and a build date tag (`YYYY-MM-DD`), multi-arch for `linux/amd64` and `linux/arm64`. A new image is published only when the code, Cargo files or Dockerfile change (or on a manual CI run); README-only changes just update the Docker Hub description.
-- CI runs clippy, an integration test against a mock NUT server, and `cargo audit` (RustSec advisories) on every push and weekly.
+- CI runs unit tests, clippy, an integration test against a mock NUT server, and `cargo audit` (RustSec advisories) on every push.
+- **Weekly CVE check** (Mondays): Trivy scans the published image (amd64 + arm64) and `cargo audit` checks `Cargo.lock`. The binary is built with [cargo-auditable](https://github.com/rust-secure-code/cargo-auditable), so scanners can see the exact Rust crates inside the `scratch` image. If the image has fixable vulnerabilities that the repo already fixes, it is rebuilt and published; if `Cargo.lock` itself still needs an update, the run fails and GitHub emails you.
 - Dependabot opens weekly dependency PRs (assigned to the maintainer, so GitHub sends a notification); CI tests each one, and merging it to main publishes a new image.
 
 Configuration, metrics and Prometheus setup are compatible with upstream (the watcher only adds metrics) and documented below.

@@ -5,9 +5,13 @@ on:
     branches: ["**"]
   pull_request:
   workflow_dispatch: {}
-  schedule:
-    # Weekly security audit of dependencies (does not publish an image)
-    - cron: "17 4 * * 1"
+  # Called by the weekly CVE check (cve-check.yml) to test, rebuild and publish the image
+  workflow_call:
+    inputs:
+      publish:
+        description: Build and publish the image
+        type: boolean
+        default: false
 
 env:
   CARGO_TERM_COLOR: always
@@ -68,7 +72,8 @@ jobs:
 
   docker:
     needs: check
-    if: github.event_name != 'schedule'
+    # When called from the scheduled CVE check, only build when asked to publish
+    if: github.event_name != 'schedule' || inputs.publish == true
     runs-on: ubuntu-latest
     permissions:
       contents: read

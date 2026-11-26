@@ -19,6 +19,10 @@ case $TARGETPLATFORM in \
 esac > /rust-target \
 && rustup target add "$(cat /rust-target)"
 
+# cargo-auditable embeds the crate list (name + version) in the binary, so image scanners
+# (Trivy, Grype, ...) can check the Rust dependencies of this FROM-scratch image for CVEs
+RUN cargo install cargo-auditable --version 0.7.8 --locked
+
 # Fetch deps using dummy app (cached layer)
 COPY Cargo.toml Cargo.lock ./
 RUN mkdir src \
@@ -31,7 +35,7 @@ COPY src/ src/
 ARG APP_VERSION
 RUN sed -i "s/^.*\bAPP_VERSION\b.*$/pub const APP_VERSION: \&str = \"$APP_VERSION\";/g" src/meta.rs
 RUN RUST_TARGET="$(cat /rust-target)" \
-&& cargo rustc --locked --target="$RUST_TARGET" --release -- -C linker=rust-lld \
+&& RUSTFLAGS="-C linker=rust-lld" cargo auditable build --locked --target="$RUST_TARGET" --release \
 && mv "target/$RUST_TARGET/release/prometheus-nut-exporter" .
 
 
